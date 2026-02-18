@@ -1,0 +1,42 @@
+Folder PATH listing
+Volume serial number is E61D-028D
+C:.
+|   structure.txt
+|   
++---components
+|       ActionButton.tsx
+|       AppBackground.tsx
+|       FilterChips.tsx
+|       LevelBadge.tsx
+|       MessageCard.tsx
+|       RiskMeter.tsx
+|       SecurityHeader.tsx
+|       StatCard.tsx
+|       
++---data
+|       mockMessages.ts
+|       
++---navigation
+|       AppNavigator.tsx
+|       types.ts
+|       
++---screens
+|       DashboardScreen.tsx
+|       MessageDetailScreen.tsx
+|       MessagesScreen.tsx
+|       RulesScreen.tsx
+|       SettingsScreen.tsx
+|       
++---state
+|       MessageState.tsx
+|       
++---theme
+|       tokens.ts
+|       
++---types
+|       message.ts
+|       
+\---utils
+        level.ts
+        time.ts
+        
