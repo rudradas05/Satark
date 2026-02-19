@@ -1,8 +1,9 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": ["jest"]
+    "types": ["jest","node"],
+    "jsx": "react-jsx",
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "backend/prisma.config.js"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

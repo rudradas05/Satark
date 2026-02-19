@@ -7,7 +7,8 @@ import { RiskMeter } from '../components/RiskMeter';
 import { SecurityHeader } from '../components/SecurityHeader';
 import { StatCard } from '../components/StatCard';
 import { useMessageState } from '../state/MessageState';
-import { opacity, palette, radii, shadow, spacing, typography } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
+import { opacity, radii, shadow, spacing, typography } from '../theme/tokens';
 import { levelMap } from '../utils/level';
 
 function riskTone(value: number): 'safe' | 'suspicious' | 'spam' {
@@ -17,6 +18,7 @@ function riskTone(value: number): 'safe' | 'suspicious' | 'spam' {
 }
 
 export function DashboardScreen() {
+  const { palette: themePalette } = useTheme();
   const { messages, stats } = useMessageState();
   const insets = useSafeAreaInsets();
 
@@ -32,7 +34,7 @@ export function DashboardScreen() {
   const globalRiskLevel = riskTone(stats.riskIndex);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: themePalette.background }]}>
       <AppBackground />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
@@ -89,16 +91,16 @@ export function DashboardScreen() {
             />
           </View>
 
-          <View style={styles.section}>
+          <View style={[styles.section, { backgroundColor: themePalette.surface, borderColor: `rgba(255,255,255,${opacity.subtle})` }]}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Live alerts</Text>
-              <Text style={styles.sectionMeta}>{topAlerts.length} shown</Text>
+              <Text style={[styles.sectionTitle, { color: themePalette.textPrimary }]}>Live alerts</Text>
+              <Text style={[styles.sectionMeta, { color: themePalette.textSecondary }]}>{topAlerts.length} shown</Text>
             </View>
 
             {topAlerts.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>No active alerts</Text>
-                <Text style={styles.emptySub}>
+                <Text style={[styles.emptyTitle, { color: themePalette.textPrimary }]}>No active alerts</Text>
+                <Text style={[styles.emptySub, { color: themePalette.textSecondary }]}>
                   Your recent messages look safe. Keep scanning enabled.
                 </Text>
               </View>
@@ -113,14 +115,16 @@ export function DashboardScreen() {
                       hitSlop={6}
                       style={({ pressed }) => [
                         styles.alertItem,
+                        {
+                          backgroundColor: themePalette.surfaceMuted,
+                          borderColor: `rgba(255,255,255,${opacity.subtle})`,
+                        },
                         pressed ? styles.pressed : null,
                       ]}
-                      // Optional later: navigate to details
-                      // onPress={() => navigation.navigate('MessageDetail', { messageId: alert.id })}
                       onPress={() => {}}
                     >
                       <View style={styles.alertHeader}>
-                        <Text style={styles.alertSender} numberOfLines={1}>
+                        <Text style={[styles.alertSender, { color: themePalette.textPrimary }]} numberOfLines={1}>
                           {alert.sender}
                         </Text>
 
@@ -139,7 +143,7 @@ export function DashboardScreen() {
                         </View>
                       </View>
 
-                      <Text style={styles.alertReason} numberOfLines={2}>
+                      <Text style={[styles.alertReason, { color: themePalette.textSecondary }]} numberOfLines={2}>
                         {alert.reasons[0]}
                       </Text>
                     </Pressable>
@@ -156,7 +160,6 @@ export function DashboardScreen() {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
   },
   safeArea: {
@@ -174,10 +177,8 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.md,
     ...shadow.card,
   },
@@ -189,13 +190,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sectionTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
   },
   sectionMeta: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
   },
@@ -204,8 +203,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: palette.surfaceMuted,
   },
   pressed: {
     opacity: 0.92,
@@ -221,7 +218,6 @@ const styles = StyleSheet.create({
   alertSender: {
     flex: 1,
     minWidth: 0,
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     fontWeight: '800',
@@ -241,7 +237,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   alertReason: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     lineHeight: Math.round(typography.body * typography.lhRelaxed),
@@ -253,14 +248,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
     marginBottom: spacing.xs,
   },
   emptySub: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     textAlign: 'center',

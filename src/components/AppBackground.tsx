@@ -1,15 +1,17 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { palette } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
 
 interface AppBackgroundProps {
   minimal?: boolean;
 }
 
 export function AppBackground({ minimal }: AppBackgroundProps) {
+  const { palette } = useTheme();
+
   return (
-    <View style={[styles.container, minimal && styles.minimal]}>
-      <View style={styles.gradient} />
+    <View style={[styles.container, minimal && styles.minimal, { backgroundColor: palette.background }]}>
+      <View style={[styles.gradient, { backgroundColor: palette.background }]} />
       {!minimal && <View style={styles.accent1} />}
       {!minimal && <View style={styles.accent2} />}
     </View>
@@ -19,7 +21,6 @@ export function AppBackground({ minimal }: AppBackgroundProps) {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: palette.background,
     overflow: 'hidden',
   },
   minimal: {
@@ -27,7 +28,6 @@ const styles = StyleSheet.create({
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: palette.background,
   },
   accent1: {
     position: 'absolute',

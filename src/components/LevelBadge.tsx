@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { opacity, palette, radii, spacing, typography } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
+import { radii, spacing, typography } from '../theme/tokens';
 import { ThreatLevel } from '../types/message';
 import { levelMap } from '../utils/level';
 
@@ -11,6 +12,7 @@ interface LevelBadgeProps {
 }
 
 export function LevelBadge({ level, compact = false }: LevelBadgeProps) {
+  const { palette } = useTheme();
   const meta = levelMap[level];
 
   return (
@@ -20,7 +22,7 @@ export function LevelBadge({ level, compact = false }: LevelBadgeProps) {
         compact && styles.badgeCompact,
         {
           backgroundColor: meta.tint,
-          borderColor: meta.color + '55', // subtle tone-aware border
+          borderColor: meta.color + '55',
         },
       ]}
     >

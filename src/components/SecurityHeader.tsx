@@ -2,19 +2,26 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { opacity, palette, radii, spacing, typography } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
+import { opacity, radii, spacing, typography } from '../theme/tokens';
 
 type StatusTone = 'safe' | 'suspicious' | 'spam' | 'neutral';
 
 interface SecurityHeaderProps {
   title: string;
   subtitle: string;
-
   statusLabel?: string;
   statusTone?: StatusTone;
 }
 
-function toneColors(tone: StatusTone) {
+interface ToneColor {
+  dot: string;
+  text: string;
+  bg: string;
+  border: string;
+}
+
+function getToneColors(tone: StatusTone, palette: any): ToneColor {
   switch (tone) {
     case 'safe':
       return {
@@ -53,15 +60,16 @@ export function SecurityHeader({
   statusLabel = 'Frontend Secure Mode',
   statusTone = 'safe',
 }: SecurityHeaderProps) {
-  const tone = toneColors(statusTone);
+  const { palette } = useTheme();
+  const tone = getToneColors(statusTone, palette);
 
   return (
     <View style={styles.row}>
       <View style={styles.textBlock}>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={[styles.subtitle, { color: palette.textSecondary }]} numberOfLines={1}>
           {subtitle}
         </Text>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={[styles.title, { color: palette.textPrimary }]} numberOfLines={2}>
           {title}
         </Text>
       </View>
@@ -98,10 +106,9 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
-    minWidth: 0, // ✅ allows text truncation properly on RN
+    minWidth: 0,
   },
   subtitle: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     letterSpacing: 0.9,
@@ -109,7 +116,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h2,
     fontWeight: '800',
@@ -124,7 +130,7 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    maxWidth: 170, // ✅ prevents chip from breaking layout
+    maxWidth: 170,
   },
   indicator: {
     borderRadius: radii.pill,

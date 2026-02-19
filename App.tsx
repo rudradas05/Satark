@@ -3,20 +3,21 @@ import { StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { darkPalette } from './src/theme/tokens';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { MessageStateProvider } from './src/state/MessageState';
-import { AuthProvider } from './src/state/AuthState'; // ✅ ADD THIS
-import { palette } from './src/theme/tokens';
+import { AuthProvider } from './src/state/AuthState';
+import { ThemeProvider, useTheme } from './src/state/ThemeState';
 
 const navTheme: Theme = {
   dark: true,
   colors: {
-    primary: palette.accent,
-    background: palette.background,
-    card: palette.surface,
-    text: palette.textPrimary,
-    border: palette.border,
-    notification: palette.spam,
+    primary: darkPalette.accent,
+    background: darkPalette.background,
+    card: darkPalette.surface,
+    text: darkPalette.textPrimary,
+    border: darkPalette.border,
+    notification: darkPalette.spam,
   },
   fonts: {
     regular: { fontFamily: 'System', fontWeight: '400' },
@@ -26,21 +27,31 @@ const navTheme: Theme = {
   },
 };
 
+function AppContent() {
+  const { palette } = useTheme();
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      <StatusBar
+        backgroundColor={palette.background}
+        barStyle="light-content"
+      />
+      <AppNavigator />
+    </NavigationContainer>
+  );
+}
+
 function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <MessageStateProvider>
-          <AuthProvider>
-            <NavigationContainer theme={navTheme}>
-              <StatusBar
-                backgroundColor={palette.background}
-                barStyle="light-content"
-              />
-              <AppNavigator />
-            </NavigationContainer>
-          </AuthProvider>
-        </MessageStateProvider>
+        <ThemeProvider>
+          <MessageStateProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </MessageStateProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
