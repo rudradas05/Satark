@@ -1,45 +1,64 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import { NavigationContainer, Theme } from '@react-navigation/native';
+import { StatusBar, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { darkPalette } from './src/theme/tokens';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { MessageStateProvider } from './src/state/MessageState';
+import { AuthProvider } from './src/state/AuthState';
+import { ThemeProvider, useTheme } from './src/state/ThemeState';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+const navTheme: Theme = {
+  dark: true,
+  colors: {
+    primary: darkPalette.accent,
+    background: darkPalette.background,
+    card: darkPalette.surface,
+    text: darkPalette.textPrimary,
+    border: darkPalette.border,
+    notification: darkPalette.spam,
+  },
+  fonts: {
+    regular: { fontFamily: 'System', fontWeight: '400' },
+    medium: { fontFamily: 'System', fontWeight: '500' },
+    bold: { fontFamily: 'System', fontWeight: '700' },
+    heavy: { fontFamily: 'System', fontWeight: '800' },
+  },
+};
+
+function AppContent() {
+  const { palette } = useTheme();
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <NavigationContainer theme={navTheme}>
+      <StatusBar
+        backgroundColor={palette.background}
+        barStyle="light-content"
+      />
+      <AppNavigator />
+    </NavigationContainer>
   );
 }
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
+function App() {
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <MessageStateProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </MessageStateProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  root: { flex: 1 },
 });
 
 export default App;
