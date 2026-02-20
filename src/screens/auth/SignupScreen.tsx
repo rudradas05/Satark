@@ -1,12 +1,13 @@
 import { ArrowLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,22 +23,60 @@ import {
   typography,
 } from '../../theme/tokens';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_REGEX = /^(?=.*\d)[A-Za-z0-9_]+$/;
+
 export function SignupScreen({ navigation }: any) {
   const { signup } = useAuth();
-  const [name, setName] = useState('');
+  const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const trimmedUserName = userName.trim();
+  const trimmedEmail = email.trim();
+  const phoneDigits = phone.replace(/\D/g, '');
+  const hasValidUserName =
+    trimmedUserName.length >= 3 &&
+    trimmedUserName.length <= 30 &&
+    USERNAME_REGEX.test(trimmedUserName);
+  const hasValidEmail = trimmedEmail.length > 0 && EMAIL_REGEX.test(trimmedEmail);
+  const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 15;
 
   const canContinue = useMemo(
     () =>
-      name.trim().length >= 2 &&
-      email.trim().length > 3 &&
-      password.trim().length >= 4,
-    [name, email, password],
+      hasValidUserName &&
+      (hasValidEmail || hasValidPhone) &&
+      password.trim().length >= 6,
+    [hasValidEmail, hasValidPhone, hasValidUserName, password],
   );
   const PasswordVisibilityIcon = showPass ? EyeOff : Eye;
+
+  const handleSignup = async () => {
+    if (!canContinue || isSubmitting) return;
+
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      await signup({
+        userName: trimmedUserName.toLowerCase(),
+        email: hasValidEmail ? trimmedEmail : undefined,
+        phone: hasValidPhone ? phoneDigits : undefined,
+        password: password.trim(),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to create account';
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -71,23 +110,25 @@ export function SignupScreen({ navigation }: any) {
 
             {/* Form Card */}
             <View style={styles.card}>
-              {/* Name Input */}
+              {/* Username Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
+                <Text style={styles.label}>Username</Text>
                 <View
                   style={[
                     styles.inputWrapper,
-                    focusedInput === 'name' && styles.inputWrapperFocused,
+                    focusedInput === 'userName' && styles.inputWrapperFocused,
                   ]}
                 >
                   <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    onFocus={() => setFocusedInput('name')}
+                    value={userName}
+                    onChangeText={setUserName}
+                    onFocus={() => setFocusedInput('userName')}
                     onBlur={() => setFocusedInput(null)}
-                    placeholder="John Doe"
+                    autoCapitalize="none"
+                    placeholder="john_123"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -111,6 +152,30 @@ export function SignupScreen({ navigation }: any) {
                     placeholder="john@example.com"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Phone Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    focusedInput === 'phone' && styles.inputWrapperFocused,
+                  ]}
+                >
+                  <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    onFocus={() => setFocusedInput('phone')}
+                    onBlur={() => setFocusedInput(null)}
+                    keyboardType="phone-pad"
+                    placeholder="9876543210"
+                    placeholderTextColor={palette.textSecondary}
+                    style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -130,9 +195,10 @@ export function SignupScreen({ navigation }: any) {
                     onFocus={() => setFocusedInput('password')}
                     onBlur={() => setFocusedInput(null)}
                     secureTextEntry={!showPass}
-                    placeholder="Minimum 8 characters"
+                    placeholder="Minimum 6 characters"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                   <Pressable
                     onPress={() => setShowPass(v => !v)}
@@ -151,10 +217,10 @@ export function SignupScreen({ navigation }: any) {
               {/* Requirements Hint */}
               <View style={styles.requirementsBox}>
                 <Text style={styles.requirementText}>
-                  - At least 8 characters
+                  - Username: 3-30 chars, at least 1 number, letters/numbers/underscore only
                 </Text>
                 <Text style={styles.requirementText}>
-                  - Mix of letters and numbers
+                  - Use valid email or phone (10-15 digits), password 6+ chars
                 </Text>
               </View>
 
@@ -163,17 +229,31 @@ export function SignupScreen({ navigation }: any) {
                 label="Create Account"
                 variant="primary"
                 disabled={!canContinue}
-                onPress={() => signup(name.trim(), email.trim(), password)}
+                onPress={handleSignup}
                 style={[
                   styles.signupButton,
-                  canContinue ? {} : styles.disabledButton,
+                  canContinue && !isSubmitting ? {} : styles.disabledButton,
                 ]}
               />
+
+              {isSubmitting ? (
+                <View style={styles.feedbackRow}>
+                  <ActivityIndicator size="small" color={palette.textPrimary} />
+                  <Text style={styles.feedbackText}>Creating account...</Text>
+                </View>
+              ) : null}
+
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
 
               {/* Login Link */}
               <View style={styles.loginPrompt}>
                 <Text style={styles.loginText}>Already a member? </Text>
-                <Pressable onPress={() => navigation.navigate('Login')}>
+                <Pressable
+                  onPress={() => navigation.navigate('Login')}
+                  disabled={isSubmitting}
+                >
                   <Text style={styles.loginLink}>Login here</Text>
                 </Pressable>
               </View>
@@ -339,6 +419,25 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  feedbackText: {
+    color: palette.textSecondary,
+    fontFamily: typography.bodyFamily,
+    fontSize: 12,
+  },
+  errorText: {
+    marginBottom: spacing.sm,
+    color: palette.spam,
+    fontFamily: typography.bodyFamily,
+    fontSize: 12,
+    textAlign: 'center',
   },
 
   // Login Prompt

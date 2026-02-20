@@ -1,6 +1,7 @@
 import { ArrowLeft, Eye, EyeOff, Lock } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -22,18 +23,46 @@ import {
   typography,
 } from '../../theme/tokens';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  const identifierTrimmed = identifier.trim();
+  const phoneDigits = identifierTrimmed.replace(/\D/g, '');
+  const hasValidEmail = EMAIL_REGEX.test(identifierTrimmed);
+  const hasValidPhone =
+    !identifierTrimmed.includes('@') &&
+    phoneDigits.length >= 10 &&
+    phoneDigits.length <= 15;
   const canContinue = useMemo(
-    () => email.trim().length > 3 && password.trim().length >= 4,
-    [email, password],
+    () => (hasValidEmail || hasValidPhone) && password.trim().length >= 6,
+    [hasValidEmail, hasValidPhone, password],
   );
   const PasswordVisibilityIcon = showPass ? EyeOff : Eye;
+
+  const handleLogin = async () => {
+    if (!canContinue || isSubmitting) return;
+
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      await login({ identifier: identifierTrimmed, password: password.trim() });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to login right now';
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -67,25 +96,26 @@ export function LoginScreen({ navigation }: any) {
 
             {/* Form Card */}
             <View style={styles.card}>
-              {/* Email Input */}
+              {/* Email or Phone Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email Address</Text>
+                <Text style={styles.label}>Email or Phone</Text>
                 <View
                   style={[
                     styles.inputWrapper,
-                    focusedInput === 'email' && styles.inputWrapperFocused,
+                    focusedInput === 'identifier' && styles.inputWrapperFocused,
                   ]}
                 >
                   <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedInput('email')}
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    onFocus={() => setFocusedInput('identifier')}
                     onBlur={() => setFocusedInput(null)}
                     autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholder="name@example.com"
+                    keyboardType="default"
+                    placeholder="name@example.com or 9876543210"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -108,6 +138,7 @@ export function LoginScreen({ navigation }: any) {
                     placeholder="********"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                   <Pressable
                     onPress={() => setShowPass(v => !v)}
@@ -128,17 +159,31 @@ export function LoginScreen({ navigation }: any) {
                 label="Login"
                 variant="primary"
                 disabled={!canContinue}
-                onPress={() => login(email.trim(), password)}
+                onPress={handleLogin}
                 style={[
                   styles.loginButton,
-                  canContinue ? {} : styles.disabledButton,
+                  canContinue && !isSubmitting ? {} : styles.disabledButton,
                 ]}
               />
+
+              {isSubmitting ? (
+                <View style={styles.feedbackRow}>
+                  <ActivityIndicator size="small" color={palette.textPrimary} />
+                  <Text style={styles.feedbackText}>Signing in...</Text>
+                </View>
+              ) : null}
+
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
 
               {/* Signup Link */}
               <View style={styles.signupPrompt}>
                 <Text style={styles.signupText}>Don't have an account? </Text>
-                <Pressable onPress={() => navigation.navigate('Signup')}>
+                <Pressable
+                  onPress={() => navigation.navigate('Signup')}
+                  disabled={isSubmitting}
+                >
                   <Text style={styles.signupLink}>Create one</Text>
                 </Pressable>
               </View>
@@ -290,6 +335,25 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  feedbackText: {
+    color: palette.textSecondary,
+    fontFamily: typography.bodyFamily,
+    fontSize: 12,
+  },
+  errorText: {
+    marginTop: spacing.sm,
+    color: palette.spam,
+    fontFamily: typography.bodyFamily,
+    fontSize: 12,
+    textAlign: 'center',
   },
 
   // Signup Prompt
