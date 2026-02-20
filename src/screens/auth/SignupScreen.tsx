@@ -219,9 +219,7 @@ export function SignupScreen({ navigation }: any) {
                 <Text style={styles.requirementText}>
                   - Username: 3-30 chars, at least 1 number, letters/numbers/underscore only
                 </Text>
-                <Text style={styles.requirementText}>
-                  - Use valid email or phone (10-15 digits), password 6+ chars
-                </Text>
+                
               </View>
 
               {/* Signup Button */}
