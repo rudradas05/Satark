@@ -25,18 +25,27 @@ import {
 } from '../../theme/tokens';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
   const { showToast } = useToast();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  const identifierTrimmed = identifier.trim();
+  const phoneDigits = identifierTrimmed.replace(/\D/g, '');
+  const hasValidEmail = EMAIL_REGEX.test(identifierTrimmed);
+  const hasValidPhone =
+    !identifierTrimmed.includes('@') &&
+    phoneDigits.length >= 10 &&
+    phoneDigits.length <= 15;
   const canContinue = useMemo(
-    () => email.trim().length > 3 && password.trim().length >= 4,
-    [email, password],
+    () => (hasValidEmail || hasValidPhone) && password.trim().length >= 6,
+    [hasValidEmail, hasValidPhone, password],
   );
   const PasswordVisibilityIcon = showPass ? EyeOff : Eye;
 
@@ -44,8 +53,9 @@ export function LoginScreen({ navigation }: any) {
     if (!canContinue || isSubmitting) return;
 
     setIsSubmitting(true);
+
     try {
-      await login({ identifier: email.trim(), password: password.trim() });
+      await login({ identifier: identifierTrimmed, password: password.trim() });
       showToast({ type: 'success', message: 'Logged in successfully.' });
     } catch (error) {
       showToast({
@@ -96,25 +106,26 @@ export function LoginScreen({ navigation }: any) {
 
             {/* Form Card */}
             <View style={styles.card}>
-              {/* Email Input */}
+              {/* Email or Phone Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email Address</Text>
+                <Text style={styles.label}>Email or Phone</Text>
                 <View
                   style={[
                     styles.inputWrapper,
-                    focusedInput === 'email' && styles.inputWrapperFocused,
+                    focusedInput === 'identifier' && styles.inputWrapperFocused,
                   ]}
                 >
                   <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    onFocus={() => setFocusedInput('email')}
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    onFocus={() => setFocusedInput('identifier')}
                     onBlur={() => setFocusedInput(null)}
                     autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholder="name@example.com"
+                    keyboardType="default"
+                    placeholder="name@example.com or 9876543210"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -137,6 +148,7 @@ export function LoginScreen({ navigation }: any) {
                     placeholder="********"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                   <Pressable
                     onPress={() => setShowPass(v => !v)}
@@ -174,7 +186,10 @@ export function LoginScreen({ navigation }: any) {
               {/* Signup Link */}
               <View style={styles.signupPrompt}>
                 <Text style={styles.signupText}>Don't have an account? </Text>
-                <Pressable onPress={() => navigation.navigate('Signup')}>
+                <Pressable
+                  onPress={() => navigation.navigate('Signup')}
+                  disabled={isSubmitting}
+                >
                   <Text style={styles.signupLink}>Create one</Text>
                 </Pressable>
               </View>

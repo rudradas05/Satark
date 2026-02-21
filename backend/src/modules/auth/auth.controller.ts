@@ -23,7 +23,7 @@ export async function signup(req: Request, res: Response) {
     });
   } catch (e: any) {
     if (e.message === 'USERNAME_EXISTS')
-      return res.status(409).json({ error: 'UserName already exists' });
+      return res.status(409).json({ error: 'Username already exists' });
     if (e.message === 'EMAIL_EXISTS')
       return res.status(409).json({ error: 'Email already exists' });
     if (e.message === 'PHONE_EXISTS')

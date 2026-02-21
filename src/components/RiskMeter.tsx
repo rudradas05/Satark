@@ -8,9 +8,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useTheme } from '../state/ThemeState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
@@ -20,16 +20,24 @@ import { ThreatLevel } from '../types/message';
 
 interface RiskMeterProps {
   label: string;
-  score: number; // 0..100
-  confidence: number; // 0..1
+  score: number;
+  confidence: number;
   level: ThreatLevel;
 }
 
-const levelColorMap: Record<ThreatLevel, string> = {
-  safe: palette.safe,
-  suspicious: palette.suspicious,
-  spam: palette.spam,
-};
+interface LevelColorMap {
+  safe: string;
+  suspicious: string;
+  spam: string;
+}
+
+function getLevelColorMap(palette: any): LevelColorMap {
+  return {
+    safe: palette.safe,
+    suspicious: palette.suspicious,
+    spam: palette.spam,
+  };
+}
 
 function clamp(n: number, min: number, max: number) {
   'worklet';
@@ -37,6 +45,9 @@ function clamp(n: number, min: number, max: number) {
 }
 
 export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
+  const { palette } = useTheme();
+  const levelColorMap = getLevelColorMap(palette);
+  
   const clampedScore = Math.round(clamp(score, 0, 100));
   const clampedConfidence = clamp(confidence, 0, 1);
 
@@ -60,14 +71,13 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
     setTrackWidth(event.nativeEvent.layout.width);
   };
 
-  // Gradient IDs must be stable (avoid re-mount flicker)
   const gradientId = useMemo(() => `riskGrad_${level}`, [level]);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: `rgba(255,255,255,${opacity.subtle})` }]}>
       <View style={styles.row}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.label} numberOfLines={1}>
+          <Text style={[styles.label, { color: palette.textSecondary }]} numberOfLines={1}>
             {label}
           </Text>
         </View>
@@ -75,11 +85,9 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
         <Text style={[styles.score, { color: accent }]}>{clampedScore}%</Text>
       </View>
 
-      <View style={styles.track} onLayout={onTrackLayout}>
-        {/* Track surface */}
-        <View style={styles.trackInner} />
+      <View style={[styles.track, { borderColor: `rgba(255,255,255,${opacity.subtle})` }]} onLayout={onTrackLayout}>
+        <View style={[styles.trackInner, { backgroundColor: palette.backgroundElevated }]} />
 
-        {/* Animated fill with gradient */}
         <Animated.View style={[styles.fillWrap, animatedFillStyle]}>
           <Svg width="100%" height="100%" preserveAspectRatio="none">
             <Defs>
@@ -111,12 +119,12 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
             },
           ]}
         >
-          <Text style={styles.confText}>
+          <Text style={[styles.confText, { color: palette.textSecondary }]}>
             Confidence {Math.round(clampedConfidence * 100)}%
           </Text>
         </View>
 
-        <Text style={styles.hint} numberOfLines={1}>
+        <Text style={[styles.hint, { color: palette.textSecondary }]} numberOfLines={1}>
           Level:{' '}
           <Text style={{ color: accent, fontWeight: '800' }}>
             {level.toUpperCase()}
@@ -129,10 +137,8 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.md,
     marginBottom: spacing.lg,
     ...shadow.card,
@@ -145,7 +151,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   label: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     fontWeight: '700',
@@ -162,11 +167,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
   },
   trackInner: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: palette.backgroundElevated,
     opacity: 0.9,
   },
   fillWrap: {
@@ -188,13 +191,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   confText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     fontWeight: '700',
   },
   hint: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
   },

@@ -7,9 +7,9 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import { useTheme } from '../state/ThemeState';
 import {
   opacity,
-  palette,
   radii,
   sizes,
   spacing,
@@ -31,7 +31,13 @@ const filters: { id: MessageFilter; label: string }[] = [
   { id: 'safe', label: 'Safe' },
 ];
 
-function chipTone(filter: MessageFilter) {
+interface ChipTone {
+  tint: string;
+  border: string;
+  text: string;
+}
+
+function getChipTone(filter: MessageFilter, palette: any): ChipTone {
   switch (filter) {
     case 'spam':
       return {
@@ -61,6 +67,8 @@ function chipTone(filter: MessageFilter) {
 }
 
 export function FilterChips({ selected, onSelect }: FilterChipsProps) {
+  const { palette } = useTheme();
+
   return (
     <ScrollView
       horizontal
@@ -69,7 +77,7 @@ export function FilterChips({ selected, onSelect }: FilterChipsProps) {
     >
       {filters.map(filter => {
         const isActive = selected === filter.id;
-        const tone = chipTone(filter.id);
+        const tone = getChipTone(filter.id, palette);
 
         return (
           <Pressable
@@ -95,9 +103,9 @@ export function FilterChips({ selected, onSelect }: FilterChipsProps) {
             <Text
               style={[
                 styles.label,
-                isActive
-                  ? { color: palette.textPrimary }
-                  : { color: palette.textSecondary },
+                {
+                  color: isActive ? palette.textPrimary : palette.textSecondary,
+                },
               ]}
               numberOfLines={1}
             >

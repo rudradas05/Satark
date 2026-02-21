@@ -12,31 +12,36 @@ const bodyFamily = Platform.select({
   default: 'sans-serif',
 });
 
-export const palette = {
-  // Core
+// DARK PALETTE (current)
+export const darkPalette = {
   background: '#060C14',
   backgroundElevated: '#0B1422',
-
-  // Surfaces
   surface: '#101D2F',
   surfaceMuted: '#13243B',
-
-  // Lines
   border: '#223552',
-
-  // Text
   textPrimary: '#F0F6FF',
   textSecondary: '#9FB5D3',
-
-  // Brand / Accent
   accent: '#49B7FF',
-
-  // Status
   safe: '#2ED8A1',
   suspicious: '#F6B24E',
   spam: '#FF6363',
+  white: '#FFFFFF',
+  black: '#000000',
+};
 
-  // Utility
+// LIGHT PALETTE (new)
+export const lightPalette = {
+  background: '#FFFFFF',
+  backgroundElevated: '#F5F5F5',
+  surface: '#FAFAFA',
+  surfaceMuted: '#F0F0F0',
+  border: '#E0E0E0',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#666666',
+  accent: '#0066CC',
+  safe: '#2ED8A1',
+  suspicious: '#F6B24E',
+  spam: '#FF6363',
   white: '#FFFFFF',
   black: '#000000',
 };
@@ -49,7 +54,6 @@ export const opacity = {
 };
 
 export const spacing = {
-  // 4pt-ish system (easier to compose consistently)
   xxs: 4,
   xs: 8,
   sm: 12,
@@ -72,15 +76,11 @@ export const radii = {
 export const typography = {
   headingFamily: headingFamily ?? 'monospace',
   bodyFamily: bodyFamily ?? 'sans-serif',
-
-  // Sizes
   h1: 28,
   h2: 22,
   h3: 18,
   body: 14,
   label: 12,
-
-  // Line heights (makes text look much nicer)
   lhTight: 1.15,
   lhNormal: 1.35,
   lhRelaxed: 1.55,
@@ -97,13 +97,13 @@ export const sizes = {
 export const shadow = Platform.select({
   ios: {
     card: {
-      shadowColor: palette.black,
+      shadowColor: darkPalette.black,
       shadowOpacity: 0.35,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 8 },
     },
     soft: {
-      shadowColor: palette.black,
+      shadowColor: darkPalette.black,
       shadowOpacity: 0.22,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 6 },
@@ -118,3 +118,6 @@ export const shadow = Platform.select({
     soft: {},
   },
 });
+
+// Default to dark (can be changed)
+export const palette = darkPalette;

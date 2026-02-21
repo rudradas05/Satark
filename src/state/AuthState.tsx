@@ -51,13 +51,12 @@ type AuthContextType = {
   user: AuthUser | null;
   login: (input: LoginInput) => Promise<void>;
   signup: (input: SignupInput) => Promise<void>;
-  changePassword: (input: ChangePasswordInput) => Promise<void>;
   logout: () => void;
+  changePassword: (input: ChangePasswordInput) => Promise<void>;
 };
 
 const API_BASE_URL =
   Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
-const AUTH_SESSION_KEY = 'auth_session_v1';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -124,25 +123,20 @@ async function requestAuth<TBody extends object>(
   return data;
 }
 
-async function readPersistedSession() {
+const AUTH_SESSION_KEY = 'auth_session';
+
+async function readPersistedSession(): Promise<AuthPayload | null> {
   try {
     const raw = await readSessionItem(AUTH_SESSION_KEY);
     if (!raw) return null;
-
-    const data: unknown = JSON.parse(raw);
-    if (!isAuthPayload(data)) {
-      await removeSessionItem(AUTH_SESSION_KEY);
-      return null;
-    }
-
-    return data;
+    const parsed: unknown = JSON.parse(raw);
+    return isAuthPayload(parsed) ? parsed : null;
   } catch {
-    await removeSessionItem(AUTH_SESSION_KEY).catch(() => null);
     return null;
   }
 }
 
-async function persistSession(payload: AuthPayload) {
+async function persistSession(payload: AuthPayload): Promise<void> {
   await writeSessionItem(AUTH_SESSION_KEY, JSON.stringify(payload));
 }
 
@@ -154,25 +148,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const [isHydrating, setIsHydrating] = useState(true);
 
   useEffect(() => {
-    let active = true;
-
-    const hydrateSession = async () => {
-      const payload = await readPersistedSession();
-      if (payload && active) {
-        setToken(payload.token);
-        setUser(payload.user);
+    let cancelled = false;
+    readPersistedSession().then(session => {
+      if (cancelled) return;
+      if (session) {
+        setToken(session.token);
+        setUser(session.user);
       }
-      if (active) {
-        setIsHydrating(false);
-      }
-    };
-
-    hydrateSession().catch(() => {
-      if (active) setIsHydrating(false);
+      setIsHydrating(false);
     });
-
     return () => {
-      active = false;
+      cancelled = true;
     };
   }, []);
 
@@ -184,7 +170,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
     setToken(payload.token);
     setUser(payload.user);
-    await persistSession(payload).catch(() => null);
+    await persistSession(payload);
   }, []);
 
   const signup = useCallback(
@@ -198,7 +184,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
       setToken(payload.token);
       setUser(payload.user);
-      await persistSession(payload).catch(() => null);
+      await persistSession(payload);
     },
     [],
   );
@@ -206,13 +192,14 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
-    removeSessionItem(AUTH_SESSION_KEY).catch(() => null);
+    removeSessionItem(AUTH_SESSION_KEY);
   }, []);
 
   const changePassword = useCallback(
     async ({ oldPassword, newPassword }: ChangePasswordInput) => {
-      if (!token) throw new Error('Not authenticated');
-
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
       const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
         method: 'POST',
         headers: {
@@ -225,7 +212,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
       const data: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
-        const message = hasErrorMessage(data) ? data.error : 'Request failed';
+        const message = hasErrorMessage(data)
+          ? data.error
+          : 'Failed to change password';
         throw new Error(message);
       }
     },
@@ -240,10 +229,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
       user,
       login,
       signup,
-      changePassword,
       logout,
+      changePassword,
     }),
-    [isHydrating, login, logout, signup, changePassword, token, user],
+    [token, user, isHydrating, login, signup, logout, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

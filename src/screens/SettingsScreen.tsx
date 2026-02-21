@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -8,27 +8,38 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { ActionButton } from '../components/ActionButton';
-import { useAuth } from '../state/AuthState';
-import { useToast } from '../state/ToastState';
-import { getUserFriendlyErrorMessage } from '../utils/errorMessages';
-
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { ChevronRight, Eye, EyeOff } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  LogOut,
+  Mail,
+  Phone,
+  Shield,
+  User,
+  X,
+} from 'lucide-react-native';
 
+import { ActionButton } from '../components/ActionButton';
 import { AppBackground } from '../components/AppBackground';
 import { SecurityHeader } from '../components/SecurityHeader';
-import {
-  opacity,
-  palette,
-  radii,
-  shadow,
-  spacing,
-  typography,
-} from '../theme/tokens';
+import { useAuth } from '../state/AuthState';
+import { useTheme } from '../state/ThemeState';
+import { opacity, palette, radii, spacing, typography } from '../theme/tokens';
+import { getUserFriendlyErrorMessage } from '../utils/errorMessages';
+import { useToast } from '../state/ToastState';
+
+const appMeta = require('../../app.json') as {
+  displayName?: string;
+  name?: string;
+};
+const packageMeta = require('../../package.json') as {
+  version?: string;
+};
 
 function ProfileModal({
   visible,
@@ -45,36 +56,59 @@ function ProfileModal({
 }) {
   if (!visible || !user) return null;
 
+  const fields = [
+    { icon: User, label: 'Username', value: user.userName },
+    { icon: Mail, label: 'Email', value: user.email ?? 'Not set' },
+    { icon: Phone, label: 'Phone', value: user.phone ?? 'Not set' },
+  ];
+
   return (
     <View style={profileStyles.overlay}>
       <Pressable style={profileStyles.backdrop} onPress={onClose} />
       <View style={profileStyles.sheet}>
         <View style={profileStyles.handle} />
-        <Text style={profileStyles.sheetTitle}>Profile</Text>
 
-        <View style={profileStyles.avatarCircle}>
-          <Text style={profileStyles.avatarLetter}>
-            {user.userName.charAt(0).toUpperCase()}
-          </Text>
+        {/* Close button */}
+        <Pressable
+          style={profileStyles.closeBtn}
+          onPress={onClose}
+          hitSlop={12}
+        >
+          <X size={20} color={palette.textSecondary} />
+        </Pressable>
+
+        {/* Avatar + name hero */}
+        <View style={profileStyles.heroSection}>
+          <View style={profileStyles.avatarRing}>
+            <View style={profileStyles.avatarCircle}>
+              <Text style={profileStyles.avatarLetter}>
+                {user.userName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+          <Text style={profileStyles.heroName}>{user.userName}</Text>
+          {user.email ? (
+            <Text style={profileStyles.heroEmail}>{user.email}</Text>
+          ) : null}
+          <View style={profileStyles.badge}>
+            <Shield size={12} color={palette.safe} />
+            <Text style={profileStyles.badgeText}>Verified</Text>
+          </View>
         </View>
 
+        {/* Info fields */}
         <View style={profileStyles.infoSection}>
-          <View style={profileStyles.infoRow}>
-            <Text style={profileStyles.infoLabel}>Username</Text>
-            <Text style={profileStyles.infoValue}>{user.userName}</Text>
-          </View>
-          {user.email ? (
-            <View style={profileStyles.infoRow}>
-              <Text style={profileStyles.infoLabel}>Email</Text>
-              <Text style={profileStyles.infoValue}>{user.email}</Text>
+          {fields.map(({ icon: Icon, label, value }) => (
+            <View key={label} style={profileStyles.infoRow}>
+              <View style={profileStyles.infoIconWrap}>
+                <Icon size={16} color={palette.accent} />
+              </View>
+              <View style={profileStyles.infoTextWrap}>
+                <Text style={profileStyles.infoLabel}>{label}</Text>
+                <Text style={profileStyles.infoValue}>{value}</Text>
+              </View>
             </View>
-          ) : null}
-          {user.phone ? (
-            <View style={profileStyles.infoRow}>
-              <Text style={profileStyles.infoLabel}>Phone</Text>
-              <Text style={profileStyles.infoValue}>{user.phone}</Text>
-            </View>
-          ) : null}
+          ))}
         </View>
 
         <ActionButton label="Close" variant="neutral" onPress={onClose} />
@@ -248,55 +282,299 @@ function ChangePasswordModal({
 }
 
 export function SettingsScreen() {
+  const { mode, toggleTheme, palette: themePalette } = useTheme();
   const insets = useSafeAreaInsets();
+  const [profileVisible, setProfileVisible] = useState(false);
   const [pushAlertsEnabled, setPushAlertsEnabled] = useState(true);
   const [biometricLockEnabled, setBiometricLockEnabled] = useState(true);
   const [shareTelemetryEnabled, setShareTelemetryEnabled] = useState(false);
-  const [profileVisible, setProfileVisible] = useState(false);
   const [changePassVisible, setChangePassVisible] = useState(false);
-  const { logout, user, changePassword } = useAuth();
+  const { user, logout, changePassword } = useAuth();
+
+  const appName = appMeta.displayName ?? appMeta.name ?? 'Satark';
+  const appVersion = packageMeta.version ?? '0.0.1';
+
+  const infoRows = useMemo(
+    () => [
+      { label: 'App Name', value: appName },
+      { label: 'App Version', value: `v${appVersion}` },
+    ],
+    [appName, appVersion],
+  );
 
   return (
-    <View style={styles.root}>
+    <View style={{ backgroundColor: themePalette.background, flex: 1 }}>
       <AppBackground />
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: insets.bottom + spacing['2xl'] },
-          ]}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.md,
+            paddingTop: spacing.sm,
+            paddingBottom: insets.bottom + spacing['2xl'],
+          }}
           showsVerticalScrollIndicator={false}
         >
           <SecurityHeader subtitle="Application Preferences" title="Settings" />
 
-          {/* View Profile */}
+          {/* Profile Card */}
           <Pressable
-            style={styles.profileCard}
             onPress={() => setProfileVisible(true)}
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.md,
+            }}
           >
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarLetter}>
-                {user?.userName?.charAt(0).toUpperCase() ?? 'U'}
+            {/* Avatar */}
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: `rgba(73,183,255,0.18)`,
+                borderWidth: 2,
+                borderColor: themePalette.accent,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  color: themePalette.accent,
+                  fontSize: 22,
+                  fontWeight: '900',
+                  fontFamily: typography.headingFamily,
+                }}
+              >
+                {user?.userName?.charAt(0).toUpperCase() ?? '?'}
               </Text>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user?.userName ?? 'User'}</Text>
-              <Text style={styles.profileSub}>
-                {user?.email ?? 'View your profile details'}
+
+            {/* Name + email */}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: themePalette.textPrimary,
+                  fontFamily: typography.headingFamily,
+                  fontSize: typography.h3,
+                  fontWeight: '900',
+                }}
+                numberOfLines={1}
+              >
+                {user?.userName ?? 'User'}
+              </Text>
+              <Text
+                style={{
+                  color: themePalette.textSecondary,
+                  fontFamily: typography.bodyFamily,
+                  fontSize: typography.label,
+                  marginTop: 2,
+                }}
+                numberOfLines={1}
+              >
+                {user?.email ?? 'Tap to view profile'}
               </Text>
             </View>
-            <ChevronRight size={20} color={palette.textSecondary} />
+
+            <ChevronRight size={20} color={themePalette.textSecondary} />
           </Pressable>
 
-          <View style={styles.panel}>
-            <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Security</Text>
-            </View>
+          {/* Account Actions */}
+          <View
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                color: themePalette.textPrimary,
+                fontFamily: typography.headingFamily,
+                fontSize: typography.h3,
+                fontWeight: '900',
+                marginBottom: spacing.sm,
+              }}
+            >
+              Account
+            </Text>
 
-            <View style={[styles.row, styles.rowDivider]}>
-              <View style={styles.textWrap}>
-                <Text style={styles.rowTitle}>Biometric lock</Text>
-                <Text style={styles.rowText}>
+            {/* Logout row */}
+            <Pressable
+              onPress={logout}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.sm,
+                paddingVertical: spacing.sm,
+              }}
+            >
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 17,
+                  backgroundColor: 'rgba(255,99,99,0.12)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <LogOut size={16} color={themePalette.spam} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: themePalette.spam,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                  }}
+                >
+                  Logout
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
+                  Sign out of your account
+                </Text>
+              </View>
+              <ChevronRight size={16} color={themePalette.textSecondary} />
+            </Pressable>
+          </View>
+
+          {/* Appearance Panel */}
+          <View
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                color: themePalette.textPrimary,
+                fontFamily: typography.headingFamily,
+                fontSize: typography.h3,
+                fontWeight: '900',
+                marginBottom: spacing.sm,
+              }}
+            >
+              Appearance
+            </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingVertical: spacing.sm,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: themePalette.textPrimary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                    marginBottom: 4,
+                  }}
+                >
+                  Dark Mode
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
+                  Currently in {mode === 'dark' ? 'Dark' : 'Light'} mode
+                </Text>
+              </View>
+
+              <Switch
+                value={mode === 'dark'}
+                onValueChange={toggleTheme}
+                thumbColor={mode === 'dark' ? themePalette.accent : '#d0d6e0'}
+                trackColor={{
+                  false: `rgba(255,255,255,${opacity.muted})`,
+                  true: `rgba(73,183,255,0.45)`,
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Security Panel */}
+          <View
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                color: themePalette.textPrimary,
+                fontFamily: typography.headingFamily,
+                fontSize: typography.h3,
+                fontWeight: '900',
+                marginBottom: spacing.sm,
+              }}
+            >
+              Security
+            </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingVertical: spacing.sm,
+                borderBottomWidth: 1,
+                borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: themePalette.textPrimary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                    marginBottom: 4,
+                  }}
+                >
+                  Biometric lock
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
                   Require fingerprint or face unlock at app launch.
                 </Text>
               </View>
@@ -304,7 +582,9 @@ export function SettingsScreen() {
               <Switch
                 value={biometricLockEnabled}
                 onValueChange={setBiometricLockEnabled}
-                thumbColor={biometricLockEnabled ? palette.safe : '#d0d6e0'}
+                thumbColor={
+                  biometricLockEnabled ? themePalette.safe : '#d0d6e0'
+                }
                 trackColor={{
                   false: `rgba(255,255,255,${opacity.muted})`,
                   true: `rgba(46,216,161,0.45)`,
@@ -312,10 +592,34 @@ export function SettingsScreen() {
               />
             </View>
 
-            <View style={styles.row}>
-              <View style={styles.textWrap}>
-                <Text style={styles.rowTitle}>Push alerts</Text>
-                <Text style={styles.rowText}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingVertical: spacing.sm,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: themePalette.textPrimary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                    marginBottom: 4,
+                  }}
+                >
+                  Push alerts
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
                   Notify instantly when high-risk spam is detected.
                 </Text>
               </View>
@@ -323,24 +627,74 @@ export function SettingsScreen() {
               <Switch
                 value={pushAlertsEnabled}
                 onValueChange={setPushAlertsEnabled}
-                thumbColor={pushAlertsEnabled ? palette.accent : '#d0d6e0'}
+                thumbColor={pushAlertsEnabled ? themePalette.accent : '#d0d6e0'}
                 trackColor={{
                   false: `rgba(255,255,255,${opacity.muted})`,
                   true: `rgba(73,183,255,0.45)`,
                 }}
               />
             </View>
+
+            <View style={{ marginTop: spacing.sm }}>
+              <ActionButton
+                label="Change Password"
+                variant="neutral"
+                onPress={() => setChangePassVisible(true)}
+              />
+            </View>
           </View>
 
-          <View style={styles.panel}>
-            <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Privacy</Text>
-            </View>
+          {/* Privacy Panel */}
+          <View
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                color: themePalette.textPrimary,
+                fontFamily: typography.headingFamily,
+                fontSize: typography.h3,
+                fontWeight: '900',
+                marginBottom: spacing.sm,
+              }}
+            >
+              Privacy
+            </Text>
 
-            <View style={styles.row}>
-              <View style={styles.textWrap}>
-                <Text style={styles.rowTitle}>Share anonymous telemetry</Text>
-                <Text style={styles.rowText}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: spacing.md,
+                paddingVertical: spacing.sm,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: themePalette.textPrimary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                    marginBottom: 4,
+                  }}
+                >
+                  Share anonymous telemetry
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
                   Helps improve model quality with privacy-safe stats.
                 </Text>
               </View>
@@ -348,7 +702,9 @@ export function SettingsScreen() {
               <Switch
                 value={shareTelemetryEnabled}
                 onValueChange={setShareTelemetryEnabled}
-                thumbColor={shareTelemetryEnabled ? palette.accent : '#d0d6e0'}
+                thumbColor={
+                  shareTelemetryEnabled ? themePalette.accent : '#d0d6e0'
+                }
                 trackColor={{
                   false: `rgba(255,255,255,${opacity.muted})`,
                   true: `rgba(73,183,255,0.45)`,
@@ -356,25 +712,63 @@ export function SettingsScreen() {
               />
             </View>
           </View>
-          <View style={styles.panel}>
-            <Text style={styles.panelTitle}>Account</Text>
 
-            <View style={{ marginTop: spacing.sm, gap: spacing.xs }}>
-              <ActionButton
-                label="Change Password"
-                variant="neutral"
-                onPress={() => setChangePassVisible(true)}
-              />
-              <ActionButton label="Logout" variant="danger" onPress={logout} />
-            </View>
-          </View>
+          {/* App Info Panel */}
+          <View
+            style={{
+              backgroundColor: themePalette.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              padding: spacing.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text
+              style={{
+                color: themePalette.textPrimary,
+                fontFamily: typography.headingFamily,
+                fontSize: typography.h3,
+                fontWeight: '900',
+                marginBottom: spacing.sm,
+              }}
+            >
+              App Info
+            </Text>
 
-          {/* After we add auth, we’ll add a Logout section here using <ActionButton variant="danger" /> */}
-
-          {/* App Info */}
-          <View style={styles.appInfo}>
-            <Text style={styles.appName}>Satark</Text>
-            <Text style={styles.appVersion}>Version 0.0.1</Text>
+            {infoRows.map((row, index) => (
+              <View
+                key={row.label}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingVertical: spacing.sm,
+                  borderBottomWidth: index === infoRows.length - 1 ? 0 : 1,
+                  borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
+                }}
+              >
+                <Text
+                  style={{
+                    color: themePalette.textSecondary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.label,
+                  }}
+                >
+                  {row.label}
+                </Text>
+                <Text
+                  style={{
+                    color: themePalette.textPrimary,
+                    fontFamily: typography.bodyFamily,
+                    fontSize: typography.body,
+                    fontWeight: '800',
+                  }}
+                >
+                  {row.value}
+                </Text>
+              </View>
+            ))}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -396,141 +790,11 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    backgroundColor: palette.background,
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-  },
-
-  panel: {
-    backgroundColor: palette.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadow.card,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  panelTitle: {
-    color: palette.textPrimary,
-    fontFamily: typography.headingFamily,
-    fontSize: typography.h3,
-    fontWeight: '900',
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
-  },
-  textWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitle: {
-    color: palette.textPrimary,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.body,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  rowText: {
-    color: palette.textSecondary,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.label,
-    lineHeight: Math.round(typography.label * typography.lhNormal),
-  },
-
-  // Profile card
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: palette.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadow.card,
-  },
-  profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: `rgba(73,183,255,0.2)`,
-    borderWidth: 2,
-    borderColor: palette.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileAvatarLetter: {
-    color: palette.accent,
-    fontFamily: typography.headingFamily,
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  profileName: {
-    color: palette.textPrimary,
-    fontFamily: typography.headingFamily,
-    fontSize: typography.body,
-    fontWeight: '800',
-  },
-  profileSub: {
-    color: palette.textSecondary,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.label,
-    marginTop: 2,
-  },
-
-  // App info footer
-  appInfo: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  appName: {
-    color: palette.textSecondary,
-    fontFamily: typography.headingFamily,
-    fontSize: typography.body,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  appVersion: {
-    color: `rgba(159,181,211,0.5)`,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.label - 1,
-    marginTop: 4,
-  },
-});
-
 const profileStyles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
-    zIndex: 10,
+    zIndex: 100,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -540,17 +804,17 @@ const profileStyles = StyleSheet.create({
     backgroundColor: palette.surface,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    padding: spacing.lg,
     paddingBottom: spacing['3xl'],
     borderWidth: 1,
     borderColor: `rgba(255,255,255,${opacity.subtle})`,
+    borderBottomWidth: 0,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: `rgba(255,255,255,${opacity.muted})`,
+    backgroundColor: palette.border,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
@@ -560,46 +824,114 @@ const profileStyles = StyleSheet.create({
     fontSize: typography.h3,
     fontWeight: '900',
     textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: palette.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  heroSection: {
+    alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  avatarCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: `rgba(73,183,255,0.15)`,
-    borderWidth: 2,
+  avatarRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
     borderColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  avatarCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: `rgba(73,183,255,0.18)`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarLetter: {
     color: palette.accent,
-    fontFamily: typography.headingFamily,
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '900',
+    fontFamily: typography.headingFamily,
+  },
+  heroName: {
+    color: palette.textPrimary,
+    fontFamily: typography.headingFamily,
+    fontSize: typography.h2,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  heroEmail: {
+    color: palette.textSecondary,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.body,
+    marginBottom: spacing.xs,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(46,216,161,0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(46,216,161,0.25)',
+  },
+  badgeText: {
+    color: palette.safe,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.label,
+    fontWeight: '700',
   },
   infoSection: {
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   infoRow: {
+    backgroundColor: palette.surfaceMuted,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  infoIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(73,183,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoTextWrap: {
+    flex: 1,
   },
   infoLabel: {
     color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
+    marginBottom: 2,
   },
   infoValue: {
     color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
-    fontSize: typography.label,
-    fontWeight: '700',
+    fontSize: typography.body,
+    fontWeight: '800',
   },
 });
 
@@ -611,12 +943,12 @@ const cpStyles = StyleSheet.create({
     color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
-    marginBottom: spacing.xxs,
+    marginBottom: spacing.xs,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
+    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: `rgba(255,255,255,${opacity.subtle})`,

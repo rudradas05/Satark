@@ -14,16 +14,19 @@ export async function signup(input: {
   phone?: string;
   password: string;
 }) {
-  const userName = input.userName.trim();
+  const userName = input.userName.trim().toLowerCase();
   const email = input.email?.toLowerCase().trim();
   const phone = input.phone?.trim();
 
-  if (await prisma.user.findUnique({ where: { userName } }))
-    throw new Error('USERNAME_EXISTS');
-  if (email && (await prisma.user.findUnique({ where: { email } })))
-    throw new Error('EMAIL_EXISTS');
-  if (phone && (await prisma.user.findUnique({ where: { phone } })))
-    throw new Error('PHONE_EXISTS');
+  if (
+    await prisma.user.findFirst({
+      where: { userName: { equals: userName, mode: "insensitive" } },
+    })
+  ) {
+    throw new Error("USERNAME_EXISTS");
+  }
+  if (email && (await prisma.user.findUnique({ where: { email } }))) throw new Error("EMAIL_EXISTS");
+  if (phone && (await prisma.user.findUnique({ where: { phone } }))) throw new Error("PHONE_EXISTS");
 
   const hashed = await bcrypt.hash(input.password, 10);
 

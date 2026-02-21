@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
-import { opacity, palette, radii, spacing, typography } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
+import { opacity, radii, spacing, typography } from '../theme/tokens';
 
 type Variant = 'primary' | 'neutral' | 'danger';
 
@@ -13,26 +14,31 @@ interface ActionButtonProps {
   disabled?: boolean;
 }
 
-const stylesByVariant: Record<
-  Variant,
-  { background: string; border: string; text: string }
-> = {
-  primary: {
-    background: `rgba(73, 183, 255, ${opacity.muted})`,
-    border: 'rgba(73, 183, 255, 0.55)',
-    text: palette.textPrimary,
-  },
-  neutral: {
-    background: `rgba(255, 255, 255, ${opacity.subtle})`,
-    border: `rgba(255, 255, 255, ${opacity.subtle})`,
-    text: palette.textPrimary,
-  },
-  danger: {
-    background: 'rgba(255, 99, 99, 0.16)',
-    border: 'rgba(255, 99, 99, 0.52)',
-    text: palette.textPrimary,
-  },
-};
+interface ButtonStyle {
+  background: string;
+  border: string;
+  text: string;
+}
+
+function getStylesByVariant(palette: any): Record<Variant, ButtonStyle> {
+  return {
+    primary: {
+      background: `rgba(73, 183, 255, ${opacity.muted})`,
+      border: 'rgba(73, 183, 255, 0.55)',
+      text: palette.textPrimary,
+    },
+    neutral: {
+      background: `rgba(255, 255, 255, ${opacity.subtle})`,
+      border: `rgba(255, 255, 255, ${opacity.subtle})`,
+      text: palette.textPrimary,
+    },
+    danger: {
+      background: 'rgba(255, 99, 99, 0.16)',
+      border: 'rgba(255, 99, 99, 0.52)',
+      text: palette.textPrimary,
+    },
+  };
+}
 
 export function ActionButton({
   label,
@@ -41,6 +47,8 @@ export function ActionButton({
   style,
   disabled = false,
 }: ActionButtonProps) {
+  const { palette } = useTheme();
+  const stylesByVariant = getStylesByVariant(palette);
   const theme = stylesByVariant[variant];
 
   return (

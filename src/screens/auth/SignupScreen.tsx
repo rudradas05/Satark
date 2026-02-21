@@ -3,11 +3,11 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,22 +25,36 @@ import {
 } from '../../theme/tokens';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_REGEX = /^[A-Za-z0-9_]+$/;
+
 export function SignupScreen({ navigation }: any) {
   const { signup } = useAuth();
   const { showToast } = useToast();
-  const [name, setName] = useState('');
+  const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  const trimmedUserName = userName.trim();
+  const trimmedEmail = email.trim();
+  const phoneDigits = phone.replace(/\D/g, '');
+  const hasValidUserName =
+    trimmedUserName.length >= 3 &&
+    trimmedUserName.length <= 30 &&
+    USERNAME_REGEX.test(trimmedUserName);
+  const hasValidEmail = trimmedEmail.length > 0 && EMAIL_REGEX.test(trimmedEmail);
+  const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 15;
+
   const canContinue = useMemo(
     () =>
-      name.trim().length >= 2 &&
-      email.trim().length > 3 &&
-      password.trim().length >= 4,
-    [name, email, password],
+      hasValidUserName &&
+      (hasValidEmail || hasValidPhone) &&
+      password.trim().length >= 6,
+    [hasValidEmail, hasValidPhone, hasValidUserName, password],
   );
   const PasswordVisibilityIcon = showPass ? EyeOff : Eye;
 
@@ -48,10 +62,12 @@ export function SignupScreen({ navigation }: any) {
     if (!canContinue || isSubmitting) return;
 
     setIsSubmitting(true);
+
     try {
       await signup({
-        userName: name.trim(),
-        email: email.trim(),
+        userName: trimmedUserName.toLowerCase(),
+        email: hasValidEmail ? trimmedEmail : undefined,
+        phone: hasValidPhone ? phoneDigits : undefined,
         password: password.trim(),
       });
       showToast({ type: 'success', message: 'Account created successfully.' });
@@ -104,23 +120,25 @@ export function SignupScreen({ navigation }: any) {
 
             {/* Form Card */}
             <View style={styles.card}>
-              {/* Name Input */}
+              {/* Username Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
+                <Text style={styles.label}>Username</Text>
                 <View
                   style={[
                     styles.inputWrapper,
-                    focusedInput === 'name' && styles.inputWrapperFocused,
+                    focusedInput === 'userName' && styles.inputWrapperFocused,
                   ]}
                 >
                   <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    onFocus={() => setFocusedInput('name')}
+                    value={userName}
+                    onChangeText={setUserName}
+                    onFocus={() => setFocusedInput('userName')}
                     onBlur={() => setFocusedInput(null)}
-                    placeholder="John Doe"
+                    autoCapitalize="none"
+                    placeholder="john_123"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -144,6 +162,30 @@ export function SignupScreen({ navigation }: any) {
                     placeholder="john@example.com"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Phone Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    focusedInput === 'phone' && styles.inputWrapperFocused,
+                  ]}
+                >
+                  <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    onFocus={() => setFocusedInput('phone')}
+                    onBlur={() => setFocusedInput(null)}
+                    keyboardType="phone-pad"
+                    placeholder="9876543210"
+                    placeholderTextColor={palette.textSecondary}
+                    style={styles.input}
+                    editable={!isSubmitting}
                   />
                 </View>
               </View>
@@ -163,9 +205,10 @@ export function SignupScreen({ navigation }: any) {
                     onFocus={() => setFocusedInput('password')}
                     onBlur={() => setFocusedInput(null)}
                     secureTextEntry={!showPass}
-                    placeholder="Minimum 8 characters"
+                    placeholder="Minimum 6 characters"
                     placeholderTextColor={palette.textSecondary}
                     style={styles.input}
+                    editable={!isSubmitting}
                   />
                   <Pressable
                     onPress={() => setShowPass(v => !v)}
@@ -184,10 +227,7 @@ export function SignupScreen({ navigation }: any) {
               {/* Requirements Hint */}
               <View style={styles.requirementsBox}>
                 <Text style={styles.requirementText}>
-                  - At least 8 characters
-                </Text>
-                <Text style={styles.requirementText}>
-                  - Mix of letters and numbers
+                  - Username: 3-30 chars, letters/numbers/underscore only
                 </Text>
               </View>
 
@@ -213,7 +253,10 @@ export function SignupScreen({ navigation }: any) {
               {/* Login Link */}
               <View style={styles.loginPrompt}>
                 <Text style={styles.loginText}>Already a member? </Text>
-                <Pressable onPress={() => navigation.navigate('Login')}>
+                <Pressable
+                  onPress={() => navigation.navigate('Login')}
+                  disabled={isSubmitting}
+                >
                   <Text style={styles.loginLink}>Login here</Text>
                 </Pressable>
               </View>
