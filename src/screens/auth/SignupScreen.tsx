@@ -1,6 +1,7 @@
 import { ArrowLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBackground } from '../../components/AppBackground';
 import { ActionButton } from '../../components/ActionButton';
 import { useAuth } from '../../state/AuthState';
+import { useToast } from '../../state/ToastState';
 import {
   opacity,
   palette,
@@ -21,13 +23,16 @@ import {
   spacing,
   typography,
 } from '../../theme/tokens';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
 
 export function SignupScreen({ navigation }: any) {
   const { signup } = useAuth();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const canContinue = useMemo(
@@ -38,6 +43,30 @@ export function SignupScreen({ navigation }: any) {
     [name, email, password],
   );
   const PasswordVisibilityIcon = showPass ? EyeOff : Eye;
+
+  const handleSignup = async () => {
+    if (!canContinue || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await signup({
+        userName: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+      });
+      showToast({ type: 'success', message: 'Account created successfully.' });
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: getUserFriendlyErrorMessage(
+          error,
+          'Unable to create account. Please try again.',
+        ),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -166,19 +195,20 @@ export function SignupScreen({ navigation }: any) {
               <ActionButton
                 label="Create Account"
                 variant="primary"
-                disabled={!canContinue}
-                onPress={() =>
-                  signup({
-                    userName: name.trim(),
-                    email: email.trim(),
-                    password,
-                  })
-                }
+                disabled={!canContinue || isSubmitting}
+                onPress={handleSignup}
                 style={[
                   styles.signupButton,
-                  canContinue ? {} : styles.disabledButton,
+                  canContinue && !isSubmitting ? {} : styles.disabledButton,
                 ]}
               />
+
+              {isSubmitting ? (
+                <View style={styles.feedbackRow}>
+                  <ActivityIndicator size="small" color={palette.textPrimary} />
+                  <Text style={styles.feedbackText}>Creating account...</Text>
+                </View>
+              ) : null}
 
               {/* Login Link */}
               <View style={styles.loginPrompt}>
@@ -349,6 +379,18 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  feedbackText: {
+    color: palette.textSecondary,
+    fontFamily: typography.bodyFamily,
+    fontSize: 12,
   },
 
   // Login Prompt

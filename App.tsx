@@ -4,8 +4,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { AuthProvider } from './src/state/AuthState';
 import { MessageStateProvider } from './src/state/MessageState';
-import { AuthProvider } from './src/state/AuthState'; // ✅ ADD THIS
+import { ToastProvider } from './src/state/ToastState';
 import { palette } from './src/theme/tokens';
 
 const navTheme: Theme = {
@@ -32,13 +33,15 @@ function App() {
       <SafeAreaProvider>
         <MessageStateProvider>
           <AuthProvider>
-            <NavigationContainer theme={navTheme}>
-              <StatusBar
-                backgroundColor={palette.background}
-                barStyle="light-content"
-              />
-              <AppNavigator />
-            </NavigationContainer>
+            <ToastProvider>
+              <NavigationContainer theme={navTheme}>
+                <StatusBar
+                  backgroundColor={palette.background}
+                  barStyle="light-content"
+                />
+                <AppNavigator />
+              </NavigationContainer>
+            </ToastProvider>
           </AuthProvider>
         </MessageStateProvider>
       </SafeAreaProvider>

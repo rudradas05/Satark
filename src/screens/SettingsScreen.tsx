@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,8 @@ import {
 } from 'react-native';
 import { ActionButton } from '../components/ActionButton';
 import { useAuth } from '../state/AuthState';
+import { useToast } from '../state/ToastState';
+import { getUserFriendlyErrorMessage } from '../utils/errorMessages';
 
 import {
   SafeAreaView,
@@ -98,7 +99,7 @@ function ChangePasswordModal({
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   if (!visible) return null;
 
@@ -108,22 +109,40 @@ function ChangePasswordModal({
     confirmPassword === newPassword;
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
-    if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
+    if (!canSubmit) {
+      showToast({
+        type: 'error',
+        message: 'Please fill all password fields correctly.',
+      });
       return;
     }
-    setError(null);
+    if (newPassword !== confirmPassword) {
+      showToast({
+        type: 'error',
+        message: 'New passwords do not match.',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await onSubmit(oldPassword, newPassword);
-      Alert.alert('Success', 'Password changed successfully');
+      showToast({
+        type: 'success',
+        message: 'Password changed successfully.',
+      });
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       onClose();
-    } catch (e: any) {
-      setError(e.message || 'Failed to change password');
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: getUserFriendlyErrorMessage(
+          error,
+          'Failed to change password. Please try again.',
+        ),
+      });
     } finally {
       setLoading(false);
     }
@@ -133,7 +152,6 @@ function ChangePasswordModal({
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setError(null);
     onClose();
   };
 
@@ -143,12 +161,6 @@ function ChangePasswordModal({
       <View style={profileStyles.sheet}>
         <View style={profileStyles.handle} />
         <Text style={profileStyles.sheetTitle}>Change Password</Text>
-
-        {error ? (
-          <View style={cpStyles.errorBox}>
-            <Text style={cpStyles.errorText}>{error}</Text>
-          </View>
-        ) : null}
 
         <View style={cpStyles.fieldWrap}>
           <Text style={cpStyles.fieldLabel}>Old Password</Text>
@@ -592,18 +604,6 @@ const profileStyles = StyleSheet.create({
 });
 
 const cpStyles = StyleSheet.create({
-  errorBox: {
-    backgroundColor: `rgba(255,99,99,0.15)`,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  errorText: {
-    color: palette.spam,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.label,
-    textAlign: 'center',
-  },
   fieldWrap: {
     marginBottom: spacing.md,
   },
