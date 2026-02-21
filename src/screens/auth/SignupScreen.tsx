@@ -53,7 +53,11 @@ export function SignupScreen({ navigation }: any) {
               hitSlop={8}
               style={styles.backButton}
             >
-              <ArrowLeft size={22} strokeWidth={2.4} color={palette.textPrimary} />
+              <ArrowLeft
+                size={22}
+                strokeWidth={2.4}
+                color={palette.textPrimary}
+              />
             </Pressable>
           </View>
 
@@ -163,7 +167,13 @@ export function SignupScreen({ navigation }: any) {
                 label="Create Account"
                 variant="primary"
                 disabled={!canContinue}
-                onPress={() => signup(name.trim(), email.trim(), password)}
+                onPress={() =>
+                  signup({
+                    userName: name.trim(),
+                    email: email.trim(),
+                    password,
+                  })
+                }
                 style={[
                   styles.signupButton,
                   canContinue ? {} : styles.disabledButton,

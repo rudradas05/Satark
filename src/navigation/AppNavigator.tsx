@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { MessageDetailScreen } from '../screens/MessageDetailScreen';
@@ -113,11 +113,26 @@ function AuthNavigator() {
 }
 
 export function AppNavigator() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHydrating } = useAuth();
+
+  if (isHydrating) {
+    return (
+      <View style={styles.bootScreen}>
+        <ActivityIndicator size="large" color={palette.accent} />
+      </View>
+    );
+  }
+
   return isAuthenticated ? <AppTabs /> : <AuthNavigator />;
 }
 
 const styles = StyleSheet.create({
+  bootScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.background,
+  },
   tabBar: {
     backgroundColor: `rgba(11, 20, 34, 0.92)`,
     borderTopWidth: 1,

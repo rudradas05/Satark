@@ -49,7 +49,11 @@ export function LoginScreen({ navigation }: any) {
               hitSlop={8}
               style={styles.backButton}
             >
-              <ArrowLeft size={22} strokeWidth={2.4} color={palette.textPrimary} />
+              <ArrowLeft
+                size={22}
+                strokeWidth={2.4}
+                color={palette.textPrimary}
+              />
             </Pressable>
           </View>
 
@@ -128,7 +132,7 @@ export function LoginScreen({ navigation }: any) {
                 label="Login"
                 variant="primary"
                 disabled={!canContinue}
-                onPress={() => login(email.trim(), password)}
+                onPress={() => login({ identifier: email.trim(), password })}
                 style={[
                   styles.loginButton,
                   canContinue ? {} : styles.disabledButton,
