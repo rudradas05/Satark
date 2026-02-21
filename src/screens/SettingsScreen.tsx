@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { ActionButton } from '../components/ActionButton';
@@ -14,7 +16,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, Eye, EyeOff } from 'lucide-react-native';
 
 import { AppBackground } from '../components/AppBackground';
 import { SecurityHeader } from '../components/SecurityHeader';
@@ -80,13 +82,167 @@ function ProfileModal({
   );
 }
 
+function ChangePasswordModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (oldPassword: string, newPassword: string) => Promise<void>;
+}) {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!visible) return null;
+
+  const canSubmit =
+    oldPassword.length >= 1 &&
+    newPassword.length >= 6 &&
+    confirmPassword === newPassword;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await onSubmit(oldPassword, newPassword);
+      Alert.alert('Success', 'Password changed successfully');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setError(null);
+    onClose();
+  };
+
+  return (
+    <View style={profileStyles.overlay}>
+      <Pressable style={profileStyles.backdrop} onPress={handleClose} />
+      <View style={profileStyles.sheet}>
+        <View style={profileStyles.handle} />
+        <Text style={profileStyles.sheetTitle}>Change Password</Text>
+
+        {error ? (
+          <View style={cpStyles.errorBox}>
+            <Text style={cpStyles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <View style={cpStyles.fieldWrap}>
+          <Text style={cpStyles.fieldLabel}>Old Password</Text>
+          <View style={cpStyles.inputRow}>
+            <TextInput
+              style={cpStyles.input}
+              value={oldPassword}
+              onChangeText={setOldPassword}
+              secureTextEntry={!showOld}
+              placeholder="Enter old password"
+              placeholderTextColor={palette.textSecondary}
+              autoCapitalize="none"
+            />
+            <Pressable onPress={() => setShowOld(v => !v)} hitSlop={8}>
+              {showOld ? (
+                <EyeOff size={18} color={palette.textSecondary} />
+              ) : (
+                <Eye size={18} color={palette.textSecondary} />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={cpStyles.fieldWrap}>
+          <Text style={cpStyles.fieldLabel}>New Password</Text>
+          <View style={cpStyles.inputRow}>
+            <TextInput
+              style={cpStyles.input}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry={!showNew}
+              placeholder="Min 6 characters"
+              placeholderTextColor={palette.textSecondary}
+              autoCapitalize="none"
+            />
+            <Pressable onPress={() => setShowNew(v => !v)} hitSlop={8}>
+              {showNew ? (
+                <EyeOff size={18} color={palette.textSecondary} />
+              ) : (
+                <Eye size={18} color={palette.textSecondary} />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={cpStyles.fieldWrap}>
+          <Text style={cpStyles.fieldLabel}>Confirm New Password</Text>
+          <View style={cpStyles.inputRow}>
+            <TextInput
+              style={cpStyles.input}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirm}
+              placeholder="Re-enter new password"
+              placeholderTextColor={palette.textSecondary}
+              autoCapitalize="none"
+            />
+            <Pressable onPress={() => setShowConfirm(v => !v)} hitSlop={8}>
+              {showConfirm ? (
+                <EyeOff size={18} color={palette.textSecondary} />
+              ) : (
+                <Eye size={18} color={palette.textSecondary} />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={cpStyles.buttons}>
+          <ActionButton
+            label={loading ? 'Changing...' : 'Change Password'}
+            variant="primary"
+            disabled={!canSubmit || loading}
+            onPress={handleSubmit}
+          />
+          <View style={{ height: spacing.xs }} />
+          <ActionButton
+            label="Cancel"
+            variant="neutral"
+            onPress={handleClose}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [pushAlertsEnabled, setPushAlertsEnabled] = useState(true);
   const [biometricLockEnabled, setBiometricLockEnabled] = useState(true);
   const [shareTelemetryEnabled, setShareTelemetryEnabled] = useState(false);
   const [profileVisible, setProfileVisible] = useState(false);
-  const { logout, user } = useAuth();
+  const [changePassVisible, setChangePassVisible] = useState(false);
+  const { logout, user, changePassword } = useAuth();
 
   return (
     <View style={styles.root}>
@@ -191,7 +347,12 @@ export function SettingsScreen() {
           <View style={styles.panel}>
             <Text style={styles.panelTitle}>Account</Text>
 
-            <View style={{ marginTop: spacing.sm }}>
+            <View style={{ marginTop: spacing.sm, gap: spacing.xs }}>
+              <ActionButton
+                label="Change Password"
+                variant="neutral"
+                onPress={() => setChangePassVisible(true)}
+              />
               <ActionButton label="Logout" variant="danger" onPress={logout} />
             </View>
           </View>
@@ -210,6 +371,14 @@ export function SettingsScreen() {
         visible={profileVisible}
         onClose={() => setProfileVisible(false)}
         user={user}
+      />
+
+      <ChangePasswordModal
+        visible={changePassVisible}
+        onClose={() => setChangePassVisible(false)}
+        onSubmit={(oldPw, newPw) =>
+          changePassword({ oldPassword: oldPw, newPassword: newPw })
+        }
       />
     </View>
   );
@@ -419,5 +588,48 @@ const profileStyles = StyleSheet.create({
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     fontWeight: '700',
+  },
+});
+
+const cpStyles = StyleSheet.create({
+  errorBox: {
+    backgroundColor: `rgba(255,99,99,0.15)`,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  errorText: {
+    color: palette.spam,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.label,
+    textAlign: 'center',
+  },
+  fieldWrap: {
+    marginBottom: spacing.md,
+  },
+  fieldLabel: {
+    color: palette.textSecondary,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.label,
+    marginBottom: spacing.xxs,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: `rgba(255,255,255,${opacity.subtle})`,
+    paddingHorizontal: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    color: palette.textPrimary,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.body,
+    paddingVertical: spacing.sm,
+  },
+  buttons: {
+    marginTop: spacing.sm,
   },
 });

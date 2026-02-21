@@ -39,6 +39,11 @@ type SignupInput = {
   password: string;
 };
 
+type ChangePasswordInput = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 type AuthContextType = {
   isAuthenticated: boolean;
   isHydrating: boolean;
@@ -46,6 +51,7 @@ type AuthContextType = {
   user: AuthUser | null;
   login: (input: LoginInput) => Promise<void>;
   signup: (input: SignupInput) => Promise<void>;
+  changePassword: (input: ChangePasswordInput) => Promise<void>;
   logout: () => void;
 };
 
@@ -203,6 +209,29 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     removeSessionItem(AUTH_SESSION_KEY).catch(() => null);
   }, []);
 
+  const changePassword = useCallback(
+    async ({ oldPassword, newPassword }: ChangePasswordInput) => {
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+
+      const data: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message = hasErrorMessage(data) ? data.error : 'Request failed';
+        throw new Error(message);
+      }
+    },
+    [token],
+  );
+
   const value = useMemo(
     () => ({
       isAuthenticated: Boolean(token && user),
@@ -211,9 +240,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
       user,
       login,
       signup,
+      changePassword,
       logout,
     }),
-    [isHydrating, login, logout, signup, token, user],
+    [isHydrating, login, logout, signup, changePassword, token, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
