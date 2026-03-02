@@ -1,0 +1,43 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String    @id @default(uuid())
+  userName    String    @unique
+  email       String?   @unique
+  phone       String?   @unique
+  password    String?
+  googleId    String?   @unique
+  avatarUrl   String?
+  role        String    @default("USER")
+  
+  messages    Message[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sender      String
+  content     String
+  isSpam      Boolean
+  confidence  Float
+  riskScore   Int
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([isSpam])
+  @@index([createdAt])
+}
