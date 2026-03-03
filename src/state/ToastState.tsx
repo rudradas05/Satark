@@ -10,14 +10,8 @@ import React, {
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  opacity,
-  palette,
-  radii,
-  shadow,
-  spacing,
-  typography,
-} from '../theme/tokens';
+import { opacity, radii, shadow, spacing, typography } from '../theme/tokens';
+import { useTheme } from './ThemeState';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -58,12 +52,12 @@ function normalizeToastInput(input: ToastInput): ActiveToast {
   };
 }
 
-function getToastColors(type: ToastType) {
+function getToastColors(type: ToastType, textColor: string) {
   if (type === 'success') {
     return {
       background: 'rgba(46,216,161,0.18)',
       border: 'rgba(46,216,161,0.5)',
-      text: palette.textPrimary,
+      text: textColor,
     };
   }
 
@@ -71,19 +65,22 @@ function getToastColors(type: ToastType) {
     return {
       background: 'rgba(255,99,99,0.2)',
       border: 'rgba(255,99,99,0.6)',
-      text: palette.textPrimary,
+      text: textColor,
     };
   }
 
   return {
     background: `rgba(73,183,255,${opacity.muted})`,
     border: 'rgba(73,183,255,0.55)',
-    text: palette.textPrimary,
+    text: textColor,
   };
 }
 
-export const ToastProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const ToastProvider: React.FC<React.PropsWithChildren> = ({
+  children,
+}) => {
   const insets = useSafeAreaInsets();
+  const { palette: themePalette } = useTheme();
   const [toast, setToast] = useState<ActiveToast | null>(null);
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(-12)).current;
@@ -150,7 +147,9 @@ export const ToastProvider: React.FC<React.PropsWithChildren> = ({ children }) =
     [showToast],
   );
 
-  const colors = toast ? getToastColors(toast.type) : null;
+  const colors = toast
+    ? getToastColors(toast.type, themePalette.textPrimary)
+    : null;
 
   return (
     <ToastContext.Provider value={value}>

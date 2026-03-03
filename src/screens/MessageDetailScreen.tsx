@@ -5,6 +5,13 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+  ArrowLeft,
+  AlertTriangle,
+  Link,
+  ShieldAlert,
+} from 'lucide-react-native';
 
 import { ActionButton } from '../components/ActionButton';
 import { AppBackground } from '../components/AppBackground';
@@ -12,12 +19,13 @@ import { LevelBadge } from '../components/LevelBadge';
 import { RiskMeter } from '../components/RiskMeter';
 import { MessagesStackParamList } from '../navigation/types';
 import { useMessageState } from '../state/MessageState';
+import { useTheme } from '../state/ThemeState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../theme/tokens';
 import { formatMessageTime } from '../utils/time';
@@ -34,6 +42,9 @@ export function MessageDetailScreen({ route, navigation }: Props) {
     toggleSenderBlock,
   } = useMessageState();
   const insets = useSafeAreaInsets();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
 
   const message = useMemo(
     () => messages.find(item => item.id === messageId),
@@ -42,13 +53,19 @@ export function MessageDetailScreen({ route, navigation }: Props) {
 
   if (!message) {
     return (
-      <View style={styles.root}>
+      <View style={[styles.root, { backgroundColor: palette.background }]}>
         <AppBackground minimal />
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.notFound}>
-            <Text style={styles.notFoundTitle}>Message unavailable</Text>
+            <Text
+              style={[styles.notFoundTitle, { color: palette.textPrimary }]}
+            >
+              Message unavailable
+            </Text>
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Text style={styles.link}>Go back</Text>
+              <Text style={[styles.link, { color: palette.accent }]}>
+                Go back
+              </Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -59,7 +76,7 @@ export function MessageDetailScreen({ route, navigation }: Props) {
   const isSenderBlocked = blocklist.includes(message.sender);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -68,16 +85,34 @@ export function MessageDetailScreen({ route, navigation }: Props) {
           <Pressable
             onPress={() => navigation.goBack()}
             hitSlop={8}
-            style={styles.backPill}
+            style={[
+              styles.backPill,
+              {
+                borderColor: border,
+                backgroundColor: isDark
+                  ? `rgba(255,255,255,${opacity.subtle})`
+                  : `rgba(0,0,0,0.04)`,
+              },
+            ]}
           >
-            <Text style={styles.backLabel}>Back</Text>
+            <ArrowLeft
+              size={16}
+              strokeWidth={2.5}
+              color={palette.textPrimary}
+            />
           </Pressable>
 
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text
+              style={[styles.headerTitle, { color: palette.textPrimary }]}
+              numberOfLines={1}
+            >
               Message details
             </Text>
-            <Text style={styles.headerSub} numberOfLines={1}>
+            <Text
+              style={[styles.headerSub, { color: palette.textSecondary }]}
+              numberOfLines={1}
+            >
               {formatMessageTime(message.receivedAt)}
             </Text>
           </View>
@@ -95,17 +130,33 @@ export function MessageDetailScreen({ route, navigation }: Props) {
           ]}
         >
           {/* Message card */}
-          <View style={styles.card}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: palette.surface,
+                borderColor: border,
+              },
+            ]}
+          >
             <View style={styles.cardTopRow}>
-              <Text style={styles.sender} numberOfLines={1}>
+              <Text
+                style={[styles.sender, { color: palette.textPrimary }]}
+                numberOfLines={1}
+              >
                 {message.sender}
               </Text>
-              <Text style={styles.timeInline} numberOfLines={1}>
+              <Text
+                style={[styles.timeInline, { color: palette.textSecondary }]}
+                numberOfLines={1}
+              >
                 {formatMessageTime(message.receivedAt)}
               </Text>
             </View>
 
-            <Text style={styles.body}>{message.body}</Text>
+            <Text style={[styles.body, { color: palette.textPrimary }]}>
+              {message.body}
+            </Text>
           </View>
 
           <RiskMeter
@@ -116,17 +167,71 @@ export function MessageDetailScreen({ route, navigation }: Props) {
           />
 
           {/* Reasons / Signals */}
-          <View style={styles.card}>
-            <Text style={styles.panelTitle}>Flagged signals</Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: palette.surface,
+                borderColor: border,
+              },
+            ]}
+          >
+            <Text style={[styles.panelTitle, { color: palette.textPrimary }]}>
+              Flagged signals
+            </Text>
 
             <View style={styles.reasonsWrap}>
-              {message.reasons.map(reason => (
-                <View key={reason} style={styles.reasonItem}>
-                  <View style={styles.reasonIcon} />
-                  <Text style={styles.reasonText}>{reason}</Text>
-                </View>
+              {message.reasons.map((reason, index) => (
+                <Animated.View
+                  key={reason}
+                  entering={FadeInDown.duration(300).delay(200 + index * 80)}
+                >
+                  <View
+                    style={[
+                      styles.reasonItem,
+                      {
+                        borderColor: border,
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <View style={styles.reasonIconWrap}>
+                      <AlertTriangle
+                        size={14}
+                        strokeWidth={2.3}
+                        color={palette.suspicious}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.reasonText,
+                        { color: palette.textSecondary },
+                      ]}
+                    >
+                      {reason}
+                    </Text>
+                  </View>
+                </Animated.View>
               ))}
             </View>
+
+            {message.hasLink && (
+              <Animated.View
+                entering={FadeInDown.duration(300).delay(
+                  200 + message.reasons.length * 80,
+                )}
+              >
+                <View style={styles.linkWarning}>
+                  <Link size={14} strokeWidth={2.3} color={palette.spam} />
+                  <Text
+                    style={[styles.linkWarningText, { color: palette.spam }]}
+                  >
+                    This message contains a link — exercise caution before
+                    clicking.
+                  </Text>
+                </View>
+              </Animated.View>
+            )}
           </View>
         </ScrollView>
 
@@ -136,6 +241,10 @@ export function MessageDetailScreen({ route, navigation }: Props) {
             styles.stickyBar,
             {
               paddingBottom: Math.max(insets.bottom, spacing.md),
+              backgroundColor: isDark
+                ? 'rgba(6, 12, 20, 0.92)'
+                : 'rgba(246, 248, 252, 0.95)',
+              borderTopColor: border,
             },
           ]}
         >
@@ -169,7 +278,6 @@ export function MessageDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
   },
   safeArea: {
@@ -184,27 +292,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   backPill: {
+    width: 36,
+    height: 36,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-  },
-  backLabel: {
-    color: palette.textPrimary,
-    fontFamily: typography.bodyFamily,
-    fontSize: typography.label,
-    fontWeight: '800',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
   },
   headerSub: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     marginTop: 2,
@@ -216,10 +316,8 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.md,
     marginBottom: spacing.lg,
     ...shadow.card,
@@ -234,26 +332,22 @@ const styles = StyleSheet.create({
   sender: {
     flex: 1,
     minWidth: 0,
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
     letterSpacing: 0.2,
   },
   timeInline: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
   },
   body: {
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     lineHeight: Math.round(typography.body * typography.lhRelaxed),
   },
 
   panelTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
@@ -270,22 +364,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: palette.surfaceMuted,
   },
-  reasonIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: radii.pill,
-    marginTop: 4,
-    backgroundColor: palette.suspicious,
+  reasonIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(246, 178, 78, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
   },
   reasonText: {
     flex: 1,
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     lineHeight: Math.round(typography.body * typography.lhRelaxed),
+  },
+  linkWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255, 99, 99, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 99, 99, 0.2)',
+  },
+  linkWarningText: {
+    flex: 1,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.label,
+    fontWeight: '700',
   },
 
   stickyBar: {
@@ -297,9 +408,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
 
-    backgroundColor: `rgba(6, 12, 20, 0.92)`,
     borderTopWidth: 1,
-    borderTopColor: `rgba(255,255,255,${opacity.subtle})`,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -314,13 +423,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   notFoundTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h2,
     marginBottom: spacing.md,
   },
   link: {
-    color: palette.accent,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     fontWeight: '800',

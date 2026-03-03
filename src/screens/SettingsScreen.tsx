@@ -29,7 +29,13 @@ import { AppBackground } from '../components/AppBackground';
 import { SecurityHeader } from '../components/SecurityHeader';
 import { useAuth } from '../state/AuthState';
 import { useTheme } from '../state/ThemeState';
-import { opacity, palette, radii, spacing, typography } from '../theme/tokens';
+import {
+  opacity,
+  radii,
+  spacing,
+  themedBorder,
+  typography,
+} from '../theme/tokens';
 import { getUserFriendlyErrorMessage } from '../utils/errorMessages';
 import { useToast } from '../state/ToastState';
 
@@ -56,6 +62,10 @@ function ProfileModal({
 }) {
   if (!visible || !user) return null;
 
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
+
   const fields = [
     { icon: User, label: 'Username', value: user.userName },
     { icon: Mail, label: 'Email', value: user.email ?? 'Not set' },
@@ -65,12 +75,22 @@ function ProfileModal({
   return (
     <View style={profileStyles.overlay}>
       <Pressable style={profileStyles.backdrop} onPress={onClose} />
-      <View style={profileStyles.sheet}>
-        <View style={profileStyles.handle} />
+      <View
+        style={[
+          profileStyles.sheet,
+          { backgroundColor: palette.surface, borderColor: border },
+        ]}
+      >
+        <View
+          style={[profileStyles.handle, { backgroundColor: palette.border }]}
+        />
 
         {/* Close button */}
         <Pressable
-          style={profileStyles.closeBtn}
+          style={[
+            profileStyles.closeBtn,
+            { backgroundColor: palette.surfaceMuted },
+          ]}
           onPress={onClose}
           hitSlop={12}
         >
@@ -79,33 +99,70 @@ function ProfileModal({
 
         {/* Avatar + name hero */}
         <View style={profileStyles.heroSection}>
-          <View style={profileStyles.avatarRing}>
+          <View
+            style={[profileStyles.avatarRing, { borderColor: palette.accent }]}
+          >
             <View style={profileStyles.avatarCircle}>
-              <Text style={profileStyles.avatarLetter}>
+              <Text
+                style={[profileStyles.avatarLetter, { color: palette.accent }]}
+              >
                 {user.userName.charAt(0).toUpperCase()}
               </Text>
             </View>
           </View>
-          <Text style={profileStyles.heroName}>{user.userName}</Text>
+          <Text
+            style={[profileStyles.heroName, { color: palette.textPrimary }]}
+          >
+            {user.userName}
+          </Text>
           {user.email ? (
-            <Text style={profileStyles.heroEmail}>{user.email}</Text>
+            <Text
+              style={[
+                profileStyles.heroEmail,
+                { color: palette.textSecondary },
+              ]}
+            >
+              {user.email}
+            </Text>
           ) : null}
           <View style={profileStyles.badge}>
             <Shield size={12} color={palette.safe} />
-            <Text style={profileStyles.badgeText}>Verified</Text>
+            <Text style={[profileStyles.badgeText, { color: palette.safe }]}>
+              Verified
+            </Text>
           </View>
         </View>
 
         {/* Info fields */}
         <View style={profileStyles.infoSection}>
           {fields.map(({ icon: Icon, label, value }) => (
-            <View key={label} style={profileStyles.infoRow}>
+            <View
+              key={label}
+              style={[
+                profileStyles.infoRow,
+                { backgroundColor: palette.surfaceMuted, borderColor: border },
+              ]}
+            >
               <View style={profileStyles.infoIconWrap}>
                 <Icon size={16} color={palette.accent} />
               </View>
               <View style={profileStyles.infoTextWrap}>
-                <Text style={profileStyles.infoLabel}>{label}</Text>
-                <Text style={profileStyles.infoValue}>{value}</Text>
+                <Text
+                  style={[
+                    profileStyles.infoLabel,
+                    { color: palette.textSecondary },
+                  ]}
+                >
+                  {label}
+                </Text>
+                <Text
+                  style={[
+                    profileStyles.infoValue,
+                    { color: palette.textPrimary },
+                  ]}
+                >
+                  {value}
+                </Text>
               </View>
             </View>
           ))}
@@ -134,6 +191,9 @@ function ChangePasswordModal({
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
 
   if (!visible) return null;
 
@@ -192,15 +252,33 @@ function ChangePasswordModal({
   return (
     <View style={profileStyles.overlay}>
       <Pressable style={profileStyles.backdrop} onPress={handleClose} />
-      <View style={profileStyles.sheet}>
-        <View style={profileStyles.handle} />
-        <Text style={profileStyles.sheetTitle}>Change Password</Text>
+      <View
+        style={[
+          profileStyles.sheet,
+          { backgroundColor: palette.surface, borderColor: border },
+        ]}
+      >
+        <View
+          style={[profileStyles.handle, { backgroundColor: palette.border }]}
+        />
+        <Text
+          style={[profileStyles.sheetTitle, { color: palette.textPrimary }]}
+        >
+          Change Password
+        </Text>
 
         <View style={cpStyles.fieldWrap}>
-          <Text style={cpStyles.fieldLabel}>Old Password</Text>
-          <View style={cpStyles.inputRow}>
+          <Text style={[cpStyles.fieldLabel, { color: palette.textSecondary }]}>
+            Old Password
+          </Text>
+          <View
+            style={[
+              cpStyles.inputRow,
+              { backgroundColor: palette.surfaceMuted, borderColor: border },
+            ]}
+          >
             <TextInput
-              style={cpStyles.input}
+              style={[cpStyles.input, { color: palette.textPrimary }]}
               value={oldPassword}
               onChangeText={setOldPassword}
               secureTextEntry={!showOld}
@@ -219,10 +297,17 @@ function ChangePasswordModal({
         </View>
 
         <View style={cpStyles.fieldWrap}>
-          <Text style={cpStyles.fieldLabel}>New Password</Text>
-          <View style={cpStyles.inputRow}>
+          <Text style={[cpStyles.fieldLabel, { color: palette.textSecondary }]}>
+            New Password
+          </Text>
+          <View
+            style={[
+              cpStyles.inputRow,
+              { backgroundColor: palette.surfaceMuted, borderColor: border },
+            ]}
+          >
             <TextInput
-              style={cpStyles.input}
+              style={[cpStyles.input, { color: palette.textPrimary }]}
               value={newPassword}
               onChangeText={setNewPassword}
               secureTextEntry={!showNew}
@@ -241,10 +326,17 @@ function ChangePasswordModal({
         </View>
 
         <View style={cpStyles.fieldWrap}>
-          <Text style={cpStyles.fieldLabel}>Confirm New Password</Text>
-          <View style={cpStyles.inputRow}>
+          <Text style={[cpStyles.fieldLabel, { color: palette.textSecondary }]}>
+            Confirm New Password
+          </Text>
+          <View
+            style={[
+              cpStyles.inputRow,
+              { backgroundColor: palette.surfaceMuted, borderColor: border },
+            ]}
+          >
             <TextInput
-              style={cpStyles.input}
+              style={[cpStyles.input, { color: palette.textPrimary }]}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirm}
@@ -284,6 +376,8 @@ function ChangePasswordModal({
 export function SettingsScreen() {
   const { mode, toggleTheme, palette: themePalette } = useTheme();
   const insets = useSafeAreaInsets();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
   const [profileVisible, setProfileVisible] = useState(false);
   const [pushAlertsEnabled, setPushAlertsEnabled] = useState(true);
   const [biometricLockEnabled, setBiometricLockEnabled] = useState(true);
@@ -323,7 +417,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
               flexDirection: 'row',
@@ -391,7 +485,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
             }}
@@ -461,7 +555,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
             }}
@@ -515,7 +609,9 @@ export function SettingsScreen() {
                 onValueChange={toggleTheme}
                 thumbColor={mode === 'dark' ? themePalette.accent : '#d0d6e0'}
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : 'rgba(0,0,0,0.08)',
                   true: `rgba(73,183,255,0.45)`,
                 }}
               />
@@ -528,7 +624,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
             }}
@@ -553,7 +649,7 @@ export function SettingsScreen() {
                 gap: spacing.md,
                 paddingVertical: spacing.sm,
                 borderBottomWidth: 1,
-                borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
+                borderBottomColor: border,
               }}
             >
               <View style={{ flex: 1 }}>
@@ -586,7 +682,9 @@ export function SettingsScreen() {
                   biometricLockEnabled ? themePalette.safe : '#d0d6e0'
                 }
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : 'rgba(0,0,0,0.08)',
                   true: `rgba(46,216,161,0.45)`,
                 }}
               />
@@ -629,7 +727,9 @@ export function SettingsScreen() {
                 onValueChange={setPushAlertsEnabled}
                 thumbColor={pushAlertsEnabled ? themePalette.accent : '#d0d6e0'}
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : 'rgba(0,0,0,0.08)',
                   true: `rgba(73,183,255,0.45)`,
                 }}
               />
@@ -650,7 +750,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
             }}
@@ -706,7 +806,9 @@ export function SettingsScreen() {
                   shareTelemetryEnabled ? themePalette.accent : '#d0d6e0'
                 }
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : 'rgba(0,0,0,0.08)',
                   true: `rgba(73,183,255,0.45)`,
                 }}
               />
@@ -719,7 +821,7 @@ export function SettingsScreen() {
               backgroundColor: themePalette.surface,
               borderRadius: radii.lg,
               borderWidth: 1,
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
               padding: spacing.md,
               marginBottom: spacing.md,
             }}
@@ -745,7 +847,7 @@ export function SettingsScreen() {
                   alignItems: 'center',
                   paddingVertical: spacing.sm,
                   borderBottomWidth: index === infoRows.length - 1 ? 0 : 1,
-                  borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
+                  borderBottomColor: border,
                 }}
               >
                 <Text
@@ -801,25 +903,21 @@ const profileStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    backgroundColor: palette.surface,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     padding: spacing.lg,
     paddingBottom: spacing['3xl'],
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     borderBottomWidth: 0,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: palette.border,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
   sheetTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
@@ -833,7 +931,6 @@ const profileStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: palette.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
@@ -847,7 +944,6 @@ const profileStyles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
-    borderColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -856,25 +952,22 @@ const profileStyles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: `rgba(73,183,255,0.18)`,
+    backgroundColor: 'rgba(73,183,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarLetter: {
-    color: palette.accent,
     fontSize: 34,
     fontWeight: '900',
     fontFamily: typography.headingFamily,
   },
   heroName: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h2,
     fontWeight: '900',
     marginBottom: 2,
   },
   heroEmail: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     marginBottom: spacing.xs,
@@ -891,7 +984,6 @@ const profileStyles = StyleSheet.create({
     borderColor: 'rgba(46,216,161,0.25)',
   },
   badgeText: {
-    color: palette.safe,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     fontWeight: '700',
@@ -901,11 +993,9 @@ const profileStyles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   infoRow: {
-    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -922,13 +1012,11 @@ const profileStyles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     marginBottom: 2,
   },
   infoValue: {
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     fontWeight: '800',
@@ -940,7 +1028,6 @@ const cpStyles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   fieldLabel: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     marginBottom: spacing.xs,
@@ -948,15 +1035,12 @@ const cpStyles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     paddingHorizontal: spacing.sm,
   },
   input: {
     flex: 1,
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     paddingVertical: spacing.sm,

@@ -12,12 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppBackground } from '../../components/AppBackground';
 import { ActionButton } from '../../components/ActionButton';
+import { useTheme } from '../../state/ThemeState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../../theme/tokens';
 
@@ -30,34 +31,58 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description, stat }: FeatureCardProps) {
   const Icon = icon;
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
 
   return (
-    <View style={styles.featureCard}>
+    <View
+      style={[
+        styles.featureCard,
+        {
+          backgroundColor: isDark
+            ? `rgba(255, 255, 255, ${opacity.subtle})`
+            : `rgba(0, 0, 0, 0.03)`,
+          borderColor: themedBorder(isDark),
+        },
+      ]}
+    >
       <View style={styles.iconBox}>
-        <Icon
-          size={24}
-          strokeWidth={2.3}
-          color={`rgba(73, 183, 255, 0.9)`}
-        />
+        <Icon size={24} strokeWidth={2.3} color={palette.accent} />
       </View>
-      <Text style={styles.featureTitle}>{title}</Text>
-      <Text style={styles.featureDesc}>{description}</Text>
-      {stat && <Text style={styles.featureStat}>{stat}</Text>}
+      <Text style={[styles.featureTitle, { color: palette.textPrimary }]}>
+        {title}
+      </Text>
+      <Text style={[styles.featureDesc, { color: palette.textSecondary }]}>
+        {description}
+      </Text>
+      {stat && (
+        <Text style={[styles.featureStat, { color: palette.accent }]}>
+          {stat}
+        </Text>
+      )}
     </View>
   );
 }
 
 function StatItem({ number, label }: { number: string; label: string }) {
+  const { palette } = useTheme();
   return (
     <View style={styles.statItem}>
-      <Text style={styles.statNumber}>{number}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statNumber, { color: palette.accent }]}>
+        {number}
+      </Text>
+      <Text style={[styles.statLabel, { color: palette.textSecondary }]}>
+        {label}
+      </Text>
     </View>
   );
 }
 
 export function WelcomeScreen({ navigation }: any) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -68,7 +93,7 @@ export function WelcomeScreen({ navigation }: any) {
   }, [fadeAnim]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -80,14 +105,37 @@ export function WelcomeScreen({ navigation }: any) {
           <Animated.View style={[{ opacity: fadeAnim }]}>
             {/* Hero Section - Compact */}
             <View style={styles.heroSection}>
-              <View style={styles.logo}>
-                <Text style={styles.logoText}>S</Text>
+              <View
+                style={[
+                  styles.logo,
+                  {
+                    backgroundColor: isDark
+                      ? `rgba(73, 183, 255, ${opacity.muted})`
+                      : `rgba(26, 127, 232, 0.12)`,
+                    borderColor: palette.accent,
+                  },
+                ]}
+              >
+                <Text style={[styles.logoText, { color: palette.textPrimary }]}>
+                  S
+                </Text>
               </View>
 
-              <Text style={styles.mainHeading}>Satark</Text>
-              <Text style={styles.subHeading}>SMS Threat Guard</Text>
+              <Text
+                style={[styles.mainHeading, { color: palette.textPrimary }]}
+              >
+                Satark
+              </Text>
+              <Text style={[styles.subHeading, { color: palette.accent }]}>
+                SMS Threat Guard
+              </Text>
 
-              <Text style={styles.heroDescription}>
+              <Text
+                style={[
+                  styles.heroDescription,
+                  { color: palette.textSecondary },
+                ]}
+              >
                 Real-time fraud detection & smart blocking
               </Text>
             </View>
@@ -125,7 +173,17 @@ export function WelcomeScreen({ navigation }: any) {
             </View>
 
             {/* Stats Bar - Horizontal Compact */}
-            <View style={styles.statsSection}>
+            <View
+              style={[
+                styles.statsSection,
+                {
+                  borderColor: border,
+                  backgroundColor: isDark
+                    ? `rgba(255, 255, 255, ${opacity.subtle})`
+                    : `rgba(0, 0, 0, 0.03)`,
+                },
+              ]}
+            >
               <StatItem number="100%" label="Local" />
               <StatItem number="Zero" label="Cloud" />
               <StatItem number="INF" label="Free" />
@@ -133,7 +191,9 @@ export function WelcomeScreen({ navigation }: any) {
 
             {/* CTA Section */}
             <View style={styles.ctaSection}>
-              <Text style={styles.ctaTitle}>Get Started</Text>
+              <Text style={[styles.ctaTitle, { color: palette.textPrimary }]}>
+                Get Started
+              </Text>
 
               <View style={styles.buttonGroup}>
                 <ActionButton
@@ -157,7 +217,9 @@ export function WelcomeScreen({ navigation }: any) {
                   color={palette.textSecondary}
                   style={styles.disclaimerIcon}
                 />
-                <Text style={styles.disclaimer}>
+                <Text
+                  style={[styles.disclaimer, { color: palette.textSecondary }]}
+                >
                   All data stays on your device
                 </Text>
               </View>
@@ -170,7 +232,7 @@ export function WelcomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: palette.background },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   scrollContent: {
     paddingBottom: spacing.md,
@@ -187,22 +249,18 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radii.lg,
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderWidth: 2,
-    borderColor: `rgba(73, 183, 255, 0.6)`,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.soft,
     marginBottom: spacing.sm,
   },
   logoText: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 32,
     fontWeight: '900',
   },
   mainHeading: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 36,
     fontWeight: '900',
@@ -210,7 +268,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   subHeading: {
-    color: `rgba(73, 183, 255, 0.8)`,
     fontFamily: typography.headingFamily,
     fontSize: 14,
     fontWeight: '700',
@@ -218,7 +275,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   heroDescription: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 13,
     lineHeight: 18,
@@ -237,10 +293,8 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     flex: 1,
-    backgroundColor: `rgba(255, 255, 255, ${opacity.subtle})`,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255, 255, 255, ${opacity.subtle})`,
     padding: spacing.sm,
     alignItems: 'center',
     ...shadow.soft,
@@ -255,7 +309,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   featureTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 12,
     fontWeight: '900',
@@ -263,7 +316,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   featureDesc: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 11,
     lineHeight: 14,
@@ -271,7 +323,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   featureStat: {
-    color: `rgba(73, 183, 255, 0.8)`,
     fontFamily: typography.headingFamily,
     fontSize: 10,
     fontWeight: '900',
@@ -283,8 +334,6 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255, 255, 255, ${opacity.subtle})`,
-    backgroundColor: `rgba(255, 255, 255, ${opacity.subtle})`,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     flexDirection: 'row',
@@ -297,14 +346,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    color: `rgba(73, 183, 255, 0.9)`,
     fontFamily: typography.headingFamily,
     fontSize: 18,
     fontWeight: '900',
     marginBottom: 2,
   },
   statLabel: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 11,
     textAlign: 'center',
@@ -317,7 +364,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   ctaTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 20,
     fontWeight: '900',
@@ -338,7 +384,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   disclaimer: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     textAlign: 'center',

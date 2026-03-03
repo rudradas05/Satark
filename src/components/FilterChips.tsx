@@ -4,17 +4,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  View,
   ViewStyle,
 } from 'react-native';
 
 import { useTheme } from '../state/ThemeState';
-import {
-  opacity,
-  radii,
-  sizes,
-  spacing,
-  typography,
-} from '../theme/tokens';
+import { opacity, radii, sizes, spacing, typography } from '../theme/tokens';
 import { ThreatLevel } from '../types/message';
 
 export type MessageFilter = 'all' | ThreatLevel;
@@ -22,6 +17,7 @@ export type MessageFilter = 'all' | ThreatLevel;
 interface FilterChipsProps {
   selected: MessageFilter;
   onSelect: (value: MessageFilter) => void;
+  counts?: Record<MessageFilter, number>;
 }
 
 const filters: { id: MessageFilter; label: string }[] = [
@@ -66,8 +62,9 @@ function getChipTone(filter: MessageFilter, palette: any): ChipTone {
   }
 }
 
-export function FilterChips({ selected, onSelect }: FilterChipsProps) {
-  const { palette } = useTheme();
+export function FilterChips({ selected, onSelect, counts }: FilterChipsProps) {
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
 
   return (
     <ScrollView
@@ -78,6 +75,7 @@ export function FilterChips({ selected, onSelect }: FilterChipsProps) {
       {filters.map(filter => {
         const isActive = selected === filter.id;
         const tone = getChipTone(filter.id, palette);
+        const count = counts?.[filter.id];
 
         return (
           <Pressable
@@ -93,8 +91,12 @@ export function FilterChips({ selected, onSelect }: FilterChipsProps) {
                       borderColor: tone.border,
                     }
                   : {
-                      backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
-                      borderColor: `rgba(255,255,255,${opacity.subtle})`,
+                      backgroundColor: isDark
+                        ? `rgba(255,255,255,${opacity.subtle})`
+                        : 'rgba(0,0,0,0.04)',
+                      borderColor: isDark
+                        ? `rgba(255,255,255,${opacity.subtle})`
+                        : 'rgba(0,0,0,0.08)',
                     },
                 pressed ? styles.pressed : null,
               ] as ViewStyle[]
@@ -111,6 +113,31 @@ export function FilterChips({ selected, onSelect }: FilterChipsProps) {
             >
               {filter.label}
             </Text>
+            {count !== undefined && count > 0 && (
+              <View
+                style={[
+                  styles.countBadge,
+                  {
+                    backgroundColor: isActive
+                      ? `${tone.text}22`
+                      : isDark
+                      ? `rgba(255,255,255,${opacity.subtle})`
+                      : 'rgba(0,0,0,0.05)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.countText,
+                    {
+                      color: isActive ? tone.text : palette.textSecondary,
+                    },
+                  ]}
+                >
+                  {count}
+                </Text>
+              </View>
+            )}
           </Pressable>
         );
       })}
@@ -132,6 +159,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   pressed: {
     opacity: 0.9,
@@ -142,5 +171,18 @@ const styles = StyleSheet.create({
     fontSize: typography.label,
     fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  countBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countText: {
+    fontFamily: typography.headingFamily,
+    fontSize: 9,
+    fontWeight: '900',
   },
 });

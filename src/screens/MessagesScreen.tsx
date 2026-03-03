@@ -12,12 +12,12 @@ import { MessageCard } from '../components/MessageCard';
 import { SecurityHeader } from '../components/SecurityHeader';
 import { MessagesStackParamList } from '../navigation/types';
 import { useMessageState } from '../state/MessageState';
+import { useTheme } from '../state/ThemeState';
 import {
-  opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../theme/tokens';
 import { MessageRecord } from '../types/message';
@@ -35,6 +35,9 @@ function filterTone(
 
 export function MessagesScreen({ navigation }: Props) {
   const { messages } = useMessageState();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
   const [filter, setFilter] = useState<MessageFilter>('all');
   const insets = useSafeAreaInsets();
 
@@ -47,6 +50,16 @@ export function MessagesScreen({ navigation }: Props) {
     if (filter === 'all') return sorted;
     return sorted.filter(message => message.level === filter);
   }, [filter, messages]);
+
+  const filterCounts = useMemo(
+    () => ({
+      all: messages.length,
+      spam: messages.filter(m => m.level === 'spam').length,
+      suspicious: messages.filter(m => m.level === 'suspicious').length,
+      safe: messages.filter(m => m.level === 'safe').length,
+    }),
+    [messages],
+  );
 
   const renderItem = useCallback(
     ({ item, index }: { item: MessageRecord; index: number }) => (
@@ -62,7 +75,7 @@ export function MessagesScreen({ navigation }: Props) {
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <FlatList
@@ -95,13 +108,29 @@ export function MessagesScreen({ navigation }: Props) {
                     : 'Spam only'
                 }
               />
-              <FilterChips selected={filter} onSelect={setFilter} />
+              <FilterChips
+                selected={filter}
+                onSelect={setFilter}
+                counts={filterCounts}
+              />
             </View>
           }
           ListEmptyComponent={
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No messages found</Text>
-              <Text style={styles.emptySubtitle}>
+            <View
+              style={[
+                styles.emptyCard,
+                {
+                  borderColor: border,
+                  backgroundColor: palette.surface,
+                },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: palette.textPrimary }]}>
+                No messages found
+              </Text>
+              <Text
+                style={[styles.emptySubtitle, { color: palette.textSecondary }]}
+              >
                 New messages will appear as soon as the scanner ingests data.
               </Text>
             </View>
@@ -114,7 +143,6 @@ export function MessagesScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
   },
   safeArea: {
@@ -137,20 +165,16 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: palette.surface,
     alignItems: 'center',
     ...shadow.card,
   },
   emptyTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     textAlign: 'center',

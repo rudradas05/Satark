@@ -14,13 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBackground } from '../../components/AppBackground';
 import { ActionButton } from '../../components/ActionButton';
 import { useAuth } from '../../state/AuthState';
+import { useTheme } from '../../state/ThemeState';
 import { useToast } from '../../state/ToastState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../../theme/tokens';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
@@ -31,6 +32,9 @@ const USERNAME_REGEX = /^[A-Za-z0-9_]+$/;
 export function SignupScreen({ navigation }: any) {
   const { signup } = useAuth();
   const { showToast } = useToast();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -46,7 +50,8 @@ export function SignupScreen({ navigation }: any) {
     trimmedUserName.length >= 3 &&
     trimmedUserName.length <= 30 &&
     USERNAME_REGEX.test(trimmedUserName);
-  const hasValidEmail = trimmedEmail.length > 0 && EMAIL_REGEX.test(trimmedEmail);
+  const hasValidEmail =
+    trimmedEmail.length > 0 && EMAIL_REGEX.test(trimmedEmail);
   const hasValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 15;
 
   const canContinue = useMemo(
@@ -85,7 +90,7 @@ export function SignupScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground minimal />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
@@ -96,7 +101,15 @@ export function SignupScreen({ navigation }: any) {
             <Pressable
               onPress={() => navigation.goBack()}
               hitSlop={8}
-              style={styles.backButton}
+              style={[
+                styles.backButton,
+                {
+                  borderColor: border,
+                  backgroundColor: isDark
+                    ? `rgba(255,255,255,${opacity.subtle})`
+                    : `rgba(0,0,0,0.04)`,
+                },
+              ]}
             >
               <ArrowLeft
                 size={22}
@@ -109,23 +122,50 @@ export function SignupScreen({ navigation }: any) {
           <View style={styles.content}>
             {/* Welcome Section */}
             <View style={styles.welcomeSection}>
-              <View style={styles.smallLogo}>
-                <Text style={styles.smallLogoText}>S</Text>
+              <View
+                style={[
+                  styles.smallLogo,
+                  {
+                    backgroundColor: isDark
+                      ? `rgba(73, 183, 255, ${opacity.muted})`
+                      : `rgba(26, 127, 232, 0.12)`,
+                    borderColor: palette.accent,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.smallLogoText, { color: palette.textPrimary }]}
+                >
+                  S
+                </Text>
               </View>
-              <Text style={styles.title}>Join Satark</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: palette.textPrimary }]}>
+                Join Satark
+              </Text>
+              <Text style={[styles.subtitle, { color: palette.textSecondary }]}>
                 Protect your messages from scams and fraud
               </Text>
             </View>
 
             {/* Form Card */}
-            <View style={styles.card}>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: palette.surface, borderColor: border },
+              ]}
+            >
               {/* Username Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Username</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Username
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'userName' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -137,7 +177,7 @@ export function SignupScreen({ navigation }: any) {
                     autoCapitalize="none"
                     placeholder="john_123"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                 </View>
@@ -145,10 +185,16 @@ export function SignupScreen({ navigation }: any) {
 
               {/* Email Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email Address</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Email Address
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'email' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -161,7 +207,7 @@ export function SignupScreen({ navigation }: any) {
                     keyboardType="email-address"
                     placeholder="john@example.com"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                 </View>
@@ -169,10 +215,16 @@ export function SignupScreen({ navigation }: any) {
 
               {/* Phone Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone Number</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Phone Number
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'phone' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -184,7 +236,7 @@ export function SignupScreen({ navigation }: any) {
                     keyboardType="phone-pad"
                     placeholder="9876543210"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                 </View>
@@ -192,10 +244,16 @@ export function SignupScreen({ navigation }: any) {
 
               {/* Password Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Password
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'password' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -207,7 +265,7 @@ export function SignupScreen({ navigation }: any) {
                     secureTextEntry={!showPass}
                     placeholder="Minimum 6 characters"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                   <Pressable
@@ -225,8 +283,22 @@ export function SignupScreen({ navigation }: any) {
               </View>
 
               {/* Requirements Hint */}
-              <View style={styles.requirementsBox}>
-                <Text style={styles.requirementText}>
+              <View
+                style={[
+                  styles.requirementsBox,
+                  {
+                    backgroundColor: isDark
+                      ? `rgba(73, 183, 255, ${opacity.muted})`
+                      : `rgba(26, 127, 232, 0.06)`,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.requirementText,
+                    { color: palette.textSecondary },
+                  ]}
+                >
                   - Username: 3-30 chars, letters/numbers/underscore only
                 </Text>
               </View>
@@ -246,31 +318,55 @@ export function SignupScreen({ navigation }: any) {
               {isSubmitting ? (
                 <View style={styles.feedbackRow}>
                   <ActivityIndicator size="small" color={palette.textPrimary} />
-                  <Text style={styles.feedbackText}>Creating account...</Text>
+                  <Text
+                    style={[
+                      styles.feedbackText,
+                      { color: palette.textSecondary },
+                    ]}
+                  >
+                    Creating account...
+                  </Text>
                 </View>
               ) : null}
 
               {/* Login Link */}
               <View style={styles.loginPrompt}>
-                <Text style={styles.loginText}>Already a member? </Text>
+                <Text
+                  style={[styles.loginText, { color: palette.textSecondary }]}
+                >
+                  Already a member?{' '}
+                </Text>
                 <Pressable
                   onPress={() => navigation.navigate('Login')}
                   disabled={isSubmitting}
                 >
-                  <Text style={styles.loginLink}>Login here</Text>
+                  <Text style={[styles.loginLink, { color: palette.accent }]}>
+                    Login here
+                  </Text>
                 </Pressable>
               </View>
             </View>
 
             {/* Privacy Note */}
-            <View style={styles.privacyNote}>
+            <View
+              style={[
+                styles.privacyNote,
+                {
+                  backgroundColor: isDark
+                    ? `rgba(73, 183, 255, ${opacity.muted})`
+                    : `rgba(26, 127, 232, 0.06)`,
+                },
+              ]}
+            >
               <ShieldCheck
                 size={20}
                 strokeWidth={2.3}
                 color={palette.textSecondary}
                 style={styles.privacyIcon}
               />
-              <Text style={styles.privacyText}>
+              <Text
+                style={[styles.privacyText, { color: palette.textSecondary }]}
+              >
                 100% local storage, zero data collection
               </Text>
             </View>
@@ -282,7 +378,7 @@ export function SignupScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: palette.background },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -300,8 +396,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -322,22 +416,18 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: radii.lg,
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderWidth: 1.5,
-    borderColor: `rgba(73, 183, 255, 0.6)`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
     ...shadow.soft,
   },
   smallLogoText: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 28,
     fontWeight: '900',
   },
   title: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 28,
     fontWeight: '900',
@@ -345,7 +435,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
     lineHeight: 20,
@@ -354,10 +443,8 @@ const styles = StyleSheet.create({
 
   // Form Card
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     ...shadow.card,
@@ -368,7 +455,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     fontWeight: '900',
@@ -379,10 +465,8 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     paddingHorizontal: spacing.md,
   },
   inputWrapperFocused: {
@@ -392,7 +476,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 12,
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: 16,
   },
@@ -403,13 +486,11 @@ const styles = StyleSheet.create({
 
   // Requirements Box
   requirementsBox: {
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderRadius: radii.md,
     padding: spacing.sm,
     marginBottom: spacing.md,
   },
   requirementText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     lineHeight: 18,
@@ -431,7 +512,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   feedbackText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
   },
@@ -443,12 +523,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
   },
   loginLink: {
-    color: `rgba(73, 183, 255, 0.9)`,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
     fontWeight: '900',
@@ -458,7 +536,6 @@ const styles = StyleSheet.create({
   privacyNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderRadius: radii.lg,
     padding: spacing.md,
     gap: spacing.sm,
@@ -468,7 +545,6 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     flex: 1,
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     lineHeight: 16,

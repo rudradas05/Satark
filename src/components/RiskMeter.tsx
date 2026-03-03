@@ -9,13 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useTheme } from '../state/ThemeState';
-import {
-  opacity,
-  radii,
-  shadow,
-  spacing,
-  typography,
-} from '../theme/tokens';
+import { opacity, radii, shadow, spacing, typography } from '../theme/tokens';
 import { ThreatLevel } from '../types/message';
 
 interface RiskMeterProps {
@@ -45,9 +39,13 @@ function clamp(n: number, min: number, max: number) {
 }
 
 export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
-  const { palette } = useTheme();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = isDark
+    ? `rgba(255,255,255,${opacity.subtle})`
+    : `rgba(0,0,0,0.08)`;
   const levelColorMap = getLevelColorMap(palette);
-  
+
   const clampedScore = Math.round(clamp(score, 0, 100));
   const clampedConfidence = clamp(confidence, 0, 1);
 
@@ -74,10 +72,18 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
   const gradientId = useMemo(() => `riskGrad_${level}`, [level]);
 
   return (
-    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: `rgba(255,255,255,${opacity.subtle})` }]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: palette.surface, borderColor: border },
+      ]}
+    >
       <View style={styles.row}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.label, { color: palette.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[styles.label, { color: palette.textSecondary }]}
+            numberOfLines={1}
+          >
             {label}
           </Text>
         </View>
@@ -85,8 +91,16 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
         <Text style={[styles.score, { color: accent }]}>{clampedScore}%</Text>
       </View>
 
-      <View style={[styles.track, { borderColor: `rgba(255,255,255,${opacity.subtle})` }]} onLayout={onTrackLayout}>
-        <View style={[styles.trackInner, { backgroundColor: palette.backgroundElevated }]} />
+      <View
+        style={[styles.track, { borderColor: border }]}
+        onLayout={onTrackLayout}
+      >
+        <View
+          style={[
+            styles.trackInner,
+            { backgroundColor: palette.backgroundElevated },
+          ]}
+        />
 
         <Animated.View style={[styles.fillWrap, animatedFillStyle]}>
           <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -114,8 +128,10 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
           style={[
             styles.confChip,
             {
-              borderColor: `rgba(255,255,255,${opacity.subtle})`,
-              backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
+              borderColor: border,
+              backgroundColor: isDark
+                ? `rgba(255,255,255,${opacity.subtle})`
+                : 'rgba(0,0,0,0.04)',
             },
           ]}
         >
@@ -124,7 +140,10 @@ export function RiskMeter({ label, score, confidence, level }: RiskMeterProps) {
           </Text>
         </View>
 
-        <Text style={[styles.hint, { color: palette.textSecondary }]} numberOfLines={1}>
+        <Text
+          style={[styles.hint, { color: palette.textSecondary }]}
+          numberOfLines={1}
+        >
           Level:{' '}
           <Text style={{ color: accent, fontWeight: '800' }}>
             {level.toUpperCase()}
