@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./modules/auth/auth.routes";
+import spamRoutes from "./modules/spam/spam.routes";
 
 dotenv.config();
 
@@ -13,3 +14,4 @@ app.use(express.json());
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRoutes);
+app.use("/spam", spamRoutes);

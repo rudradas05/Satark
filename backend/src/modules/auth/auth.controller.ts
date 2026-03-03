@@ -1,6 +1,9 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthRequest } from '../../middleware/auth';
 import { SignupSchema, LoginSchema, ChangePasswordSchema } from './auth.schema';
 import * as service from './auth.service';
+
+type Request = AuthRequest;
 
 export async function signup(req: Request, res: Response) {
   const parsed = SignupSchema.safeParse(req.body);
@@ -65,7 +68,7 @@ export async function changePassword(req: Request, res: Response) {
       .status(400)
       .json({ error: 'Invalid input', details: parsed.error.flatten() });
 
-  const userId = (req as any).userId as string | undefined;
+  const userId = req.userId;
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
   try {
