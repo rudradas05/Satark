@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { MessageDetailScreen } from '../screens/MessageDetailScreen';
@@ -21,7 +21,8 @@ import { SignupScreen } from '../screens/auth/SignupScreen';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 
 import { useAuth } from '../state/AuthState';
-import { opacity, palette, radii, spacing } from '../theme/tokens';
+import { useTheme } from '../state/ThemeState';
+import { opacity, radii, spacing, themedBorder } from '../theme/tokens';
 
 import type {
   AuthStackParamList,
@@ -60,25 +61,57 @@ function TabIcon({
   routeName: keyof RootTabParamList;
 }) {
   const Icon = tabIconMap[routeName];
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
 
   return (
-    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+    <View
+      style={[
+        styles.iconWrap,
+        focused && {
+          backgroundColor: isDark
+            ? `rgba(73, 183, 255, ${opacity?.muted ?? 0.16})`
+            : `rgba(26, 127, 232, 0.1)`,
+        },
+      ]}
+    >
       <Icon
-        size={22}
-        strokeWidth={focused ? 2.5 : 2.1}
-        color={focused ? palette.textPrimary : palette.textSecondary}
+        size={20}
+        strokeWidth={focused ? 2.6 : 2}
+        color={focused ? palette.accent : palette.textSecondary}
       />
+      <Text
+        style={[
+          styles.tabLabel,
+          { color: focused ? palette.accent : palette.textSecondary },
+          focused && styles.tabLabelActive,
+        ]}
+        numberOfLines={1}
+      >
+        {routeName}
+      </Text>
     </View>
   );
 }
 
 function AppTabs() {
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: isDark
+              ? 'rgba(11, 20, 34, 0.95)'
+              : 'rgba(255, 255, 255, 0.97)',
+            borderTopColor: themedBorder(isDark),
+          },
+        ],
         tabBarItemStyle: styles.tabBarItem,
         tabBarActiveTintColor: palette.textPrimary,
         tabBarInactiveTintColor: palette.textSecondary,
@@ -113,36 +146,54 @@ function AuthNavigator() {
 }
 
 export function AppNavigator() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHydrating } = useAuth();
+  const { palette } = useTheme();
+
+  if (isHydrating) {
+    return (
+      <View
+        style={[styles.bootScreen, { backgroundColor: palette.background }]}
+      >
+        <ActivityIndicator size="large" color={palette.accent} />
+      </View>
+    );
+  }
+
   return isAuthenticated ? <AppTabs /> : <AuthNavigator />;
 }
 
 const styles = StyleSheet.create({
+  bootScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabBar: {
-    backgroundColor: `rgba(11, 20, 34, 0.92)`,
     borderTopWidth: 1,
-    borderTopColor: `rgba(255,255,255,${opacity?.subtle ?? 0.08})`,
     elevation: 0,
-    height: 80,
-    paddingBottom: 12,
-    paddingTop: 10,
+    height: 72,
+    paddingBottom: 8,
+    paddingTop: 8,
   },
   tabBarItem: {
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xxs,
   },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 56,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: `rgba(255,255,255,${opacity?.subtle ?? 0.08})`,
+    minWidth: 60,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.xl,
+    gap: 4,
   },
-  iconWrapActive: {
-    backgroundColor: `rgba(73, 183, 255, ${opacity?.muted ?? 0.16})`,
-    borderColor: `rgba(73, 183, 255, 0.55)`,
+  tabLabel: {
+    fontFamily: 'sans-serif',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  tabLabelActive: {
+    fontWeight: '900',
   },
 });

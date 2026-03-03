@@ -8,22 +8,27 @@ import {
 import { AppBackground } from '../components/AppBackground';
 import { SecurityHeader } from '../components/SecurityHeader';
 import { useMessageState } from '../state/MessageState';
+import { useTheme } from '../state/ThemeState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../theme/tokens';
 
-const severityColor: Record<'low' | 'medium' | 'high', string> = {
-  low: palette.safe,
-  medium: palette.suspicious,
-  high: palette.spam,
-};
-
 export function RulesScreen() {
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
+
+  const severityColor: Record<'low' | 'medium' | 'high', string> = {
+    low: palette.safe,
+    medium: palette.suspicious,
+    high: palette.spam,
+  };
+
   const {
     autoBlockEnabled,
     blocklist,
@@ -37,7 +42,7 @@ export function RulesScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
@@ -53,11 +58,27 @@ export function RulesScreen() {
           />
 
           {/* Toggles */}
-          <View style={styles.panel}>
-            <View style={[styles.row, styles.rowDivider]}>
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: palette.surface,
+                borderColor: border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.row,
+                { borderBottomColor: border },
+                styles.rowDivider,
+              ]}
+            >
               <View style={styles.textWrap}>
-                <Text style={styles.title}>Auto-block high-risk senders</Text>
-                <Text style={styles.sub}>
+                <Text style={[styles.title, { color: palette.textPrimary }]}>
+                  Auto-block high-risk senders
+                </Text>
+                <Text style={[styles.sub, { color: palette.textSecondary }]}>
                   Automatically adds spam sources to local blocklist.
                 </Text>
               </View>
@@ -67,16 +88,20 @@ export function RulesScreen() {
                 onValueChange={setAutoBlockEnabled}
                 thumbColor={autoBlockEnabled ? palette.safe : '#d0d6e0'}
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
-                  true: `rgba(46,216,161,0.45)`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : `rgba(0,0,0,0.1)`,
+                  true: 'rgba(46,216,161,0.45)',
                 }}
               />
             </View>
 
             <View style={styles.row}>
               <View style={styles.textWrap}>
-                <Text style={styles.title}>Strict scan mode</Text>
-                <Text style={styles.sub}>
+                <Text style={[styles.title, { color: palette.textPrimary }]}>
+                  Strict scan mode
+                </Text>
+                <Text style={[styles.sub, { color: palette.textSecondary }]}>
                   Raises sensitivity for unknown senders and links.
                 </Text>
               </View>
@@ -86,18 +111,34 @@ export function RulesScreen() {
                 onValueChange={setStrictModeEnabled}
                 thumbColor={strictModeEnabled ? palette.accent : '#d0d6e0'}
                 trackColor={{
-                  false: `rgba(255,255,255,${opacity.muted})`,
-                  true: `rgba(73,183,255,0.45)`,
+                  false: isDark
+                    ? `rgba(255,255,255,${opacity.muted})`
+                    : `rgba(0,0,0,0.1)`,
+                  true: 'rgba(73,183,255,0.45)',
                 }}
               />
             </View>
           </View>
 
           {/* Keyword rules */}
-          <View style={styles.panel}>
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: palette.surface,
+                borderColor: border,
+              },
+            ]}
+          >
             <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Keyword rules</Text>
-              <Text style={styles.panelMeta}>{keywordRules.length}</Text>
+              <Text style={[styles.panelTitle, { color: palette.textPrimary }]}>
+                Keyword rules
+              </Text>
+              <Text
+                style={[styles.panelMeta, { color: palette.textSecondary }]}
+              >
+                {keywordRules.length}
+              </Text>
             </View>
 
             {keywordRules.map((rule, idx) => {
@@ -105,10 +146,18 @@ export function RulesScreen() {
               return (
                 <View
                   key={rule.id}
-                  style={[styles.row, !isLast && styles.rowDivider]}
+                  style={[
+                    styles.row,
+                    !isLast && styles.rowDivider,
+                    !isLast && { borderBottomColor: border },
+                  ]}
                 >
                   <View style={styles.textWrap}>
-                    <Text style={styles.title}>{rule.keyword}</Text>
+                    <Text
+                      style={[styles.title, { color: palette.textPrimary }]}
+                    >
+                      {rule.keyword}
+                    </Text>
                     <Text
                       style={[
                         styles.sub,
@@ -124,8 +173,10 @@ export function RulesScreen() {
                     onValueChange={() => toggleKeywordRule(rule.id)}
                     thumbColor={rule.enabled ? palette.accent : '#d0d6e0'}
                     trackColor={{
-                      false: `rgba(255,255,255,${opacity.muted})`,
-                      true: `rgba(73,183,255,0.42)`,
+                      false: isDark
+                        ? `rgba(255,255,255,${opacity.muted})`
+                        : `rgba(0,0,0,0.1)`,
+                      true: 'rgba(73,183,255,0.42)',
                     }}
                   />
                 </View>
@@ -134,19 +185,50 @@ export function RulesScreen() {
           </View>
 
           {/* Blocked senders */}
-          <View style={styles.panel}>
+          <View
+            style={[
+              styles.panel,
+              {
+                backgroundColor: palette.surface,
+                borderColor: border,
+              },
+            ]}
+          >
             <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Blocked senders</Text>
-              <Text style={styles.panelMeta}>{blocklist.length}</Text>
+              <Text style={[styles.panelTitle, { color: palette.textPrimary }]}>
+                Blocked senders
+              </Text>
+              <Text
+                style={[styles.panelMeta, { color: palette.textSecondary }]}
+              >
+                {blocklist.length}
+              </Text>
             </View>
 
             {blocklist.length === 0 ? (
-              <Text style={styles.sub}>No blocked senders configured.</Text>
+              <Text style={[styles.sub, { color: palette.textSecondary }]}>
+                No blocked senders configured.
+              </Text>
             ) : (
               <View style={styles.chipWrap}>
                 {blocklist.map(sender => (
-                  <View key={sender} style={styles.senderChip}>
-                    <Text style={styles.senderChipText} numberOfLines={1}>
+                  <View
+                    key={sender}
+                    style={[
+                      styles.senderChip,
+                      {
+                        borderColor: border,
+                        backgroundColor: palette.surfaceMuted,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.senderChipText,
+                        { color: palette.textSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
                       {sender}
                     </Text>
                   </View>
@@ -162,7 +244,6 @@ export function RulesScreen() {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: palette.background,
     flex: 1,
   },
   safeArea: {
@@ -174,10 +255,8 @@ const styles = StyleSheet.create({
   },
 
   panel: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadow.card,
@@ -190,13 +269,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   panelTitle: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: typography.h3,
     fontWeight: '900',
   },
   panelMeta: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
   },
@@ -210,7 +287,6 @@ const styles = StyleSheet.create({
   },
   rowDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: `rgba(255,255,255,${opacity.subtle})`,
   },
 
   textWrap: {
@@ -218,14 +294,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.body,
     fontWeight: '800',
     marginBottom: 4,
   },
   sub: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     lineHeight: Math.round(typography.label * typography.lhNormal),
@@ -241,13 +315,10 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: palette.surfaceMuted,
     paddingHorizontal: spacing.sm,
     paddingVertical: 8,
   },
   senderChipText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: typography.label,
     fontWeight: '800',

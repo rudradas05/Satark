@@ -7,8 +7,32 @@ import React, {
   useState,
 } from 'react';
 
-import { initialKeywordRules, mockMessages } from '../data/mockMessages';
-import { DashboardStats, KeywordRule, MessageRecord } from '../types/message';
+import { initialKeywordRules } from '../data/mockMessages';
+import {
+  DashboardStats,
+  KeywordRule,
+  MessageRecord,
+  ThreatLevel,
+} from '../types/message';
+import { RawSmsEvent } from '../utils/smsInterceptor';
+
+/** Convert an intercepted SMS into a MessageRecord with "pending" classification. */
+function smsToRecord(event: RawSmsEvent): MessageRecord {
+  const hasLink = /https?:\/\/|www\./i.test(event.body);
+  return {
+    id: `sms-${event.timestamp}-${Math.random().toString(36).slice(2, 8)}`,
+    sender: event.sender,
+    preview:
+      event.body.length > 80 ? event.body.slice(0, 77) + '...' : event.body,
+    body: event.body,
+    receivedAt: new Date(event.timestamp).toISOString(),
+    level: 'suspicious', // default until model classifies it
+    riskScore: 50,
+    confidence: 0,
+    reasons: ['Pending analysis'],
+    hasLink,
+  };
+}
 
 interface MessageStateValue {
   messages: MessageRecord[];
@@ -26,6 +50,21 @@ interface MessageStateValue {
 
   setAutoBlockEnabled: (enabled: boolean) => void;
   setStrictModeEnabled: (enabled: boolean) => void;
+
+  /** Ingest a real intercepted SMS into the message list. Returns the record id. */
+  addInterceptedSms: (event: RawSmsEvent) => string;
+
+  /** Update a message with model classification results. */
+  classifyMessage: (
+    id: string,
+    level: ThreatLevel,
+    riskScore: number,
+    confidence: number,
+    reasons: string[],
+  ) => void;
+
+  /** Load previously saved messages from the backend database. */
+  loadMessages: (savedMessages: MessageRecord[]) => void;
 
   // handy for dev/testing
   resetDemoData: () => void;
@@ -50,8 +89,8 @@ function updateById(
 }
 
 export function MessageStateProvider({ children }: { children: ReactNode }) {
-  const [messages, setMessages] = useState<MessageRecord[]>(mockMessages);
-  const [blocklist, setBlocklist] = useState<string[]>(['TX-NETPAY']);
+  const [messages, setMessages] = useState<MessageRecord[]>([]);
+  const [blocklist, setBlocklist] = useState<string[]>([]);
   const [keywordRules, setKeywordRules] =
     useState<KeywordRule[]>(initialKeywordRules);
   const [autoBlockEnabled, setAutoBlockEnabled] = useState(true);
@@ -114,6 +153,55 @@ export function MessageStateProvider({ children }: { children: ReactNode }) {
     [autoBlockEnabled],
   );
 
+  const addInterceptedSms = useCallback((event: RawSmsEvent): string => {
+    const record = smsToRecord(event);
+    setMessages(current => [record, ...current]);
+    return record.id;
+  }, []);
+
+  const classifyMessage = useCallback(
+    (
+      id: string,
+      level: ThreatLevel,
+      riskScore: number,
+      confidence: number,
+      reasons: string[],
+    ) => {
+      setMessages(current =>
+        updateById(current, id, msg => ({
+          ...msg,
+          level,
+          riskScore,
+          confidence,
+          reasons,
+        })),
+      );
+
+      // Auto-block spam senders if enabled
+      if (level === 'spam' && autoBlockEnabled) {
+        setMessages(current => {
+          const msg = current.find(m => m.id === id);
+          if (msg) {
+            setBlocklist(bl =>
+              bl.includes(msg.sender) ? bl : [msg.sender, ...bl],
+            );
+          }
+          return current;
+        });
+      }
+    },
+    [autoBlockEnabled],
+  );
+
+  const loadMessages = useCallback((savedMessages: MessageRecord[]) => {
+    setMessages(current => {
+      // Merge: keep any real-time intercepted messages, add DB messages that aren't already shown
+      const existingIds = new Set(current.map(m => m.id));
+      const newFromDb = savedMessages.filter(m => !existingIds.has(m.id));
+      return [...current, ...newFromDb];
+    });
+  }, []);
+
   const stats = useMemo<DashboardStats>(() => {
     let safeCount = 0;
     let suspiciousCount = 0;
@@ -141,8 +229,8 @@ export function MessageStateProvider({ children }: { children: ReactNode }) {
   }, [messages, blocklist.length]);
 
   const resetDemoData = useCallback(() => {
-    setMessages(mockMessages);
-    setBlocklist(['TX-NETPAY']);
+    setMessages([]);
+    setBlocklist([]);
     setKeywordRules(initialKeywordRules);
     setAutoBlockEnabled(true);
     setStrictModeEnabled(false);
@@ -162,6 +250,9 @@ export function MessageStateProvider({ children }: { children: ReactNode }) {
       toggleKeywordRule,
       setAutoBlockEnabled,
       setStrictModeEnabled,
+      addInterceptedSms,
+      classifyMessage,
+      loadMessages,
       resetDemoData,
     }),
     [
@@ -175,6 +266,9 @@ export function MessageStateProvider({ children }: { children: ReactNode }) {
       reportMessageSpam,
       toggleSenderBlock,
       toggleKeywordRule,
+      addInterceptedSms,
+      classifyMessage,
+      loadMessages,
       resetDemoData,
     ],
   );

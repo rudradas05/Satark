@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../state/ThemeState';
 import { radii, spacing, typography } from '../theme/tokens';
 import { ThreatLevel } from '../types/message';
-import { levelMap } from '../utils/level';
+import { getLevelMap } from '../utils/level';
 
 interface LevelBadgeProps {
   level: ThreatLevel;
@@ -13,7 +13,7 @@ interface LevelBadgeProps {
 
 export function LevelBadge({ level, compact = false }: LevelBadgeProps) {
   const { palette } = useTheme();
-  const meta = levelMap[level];
+  const meta = getLevelMap(palette)[level];
 
   return (
     <View

@@ -20,7 +20,10 @@ interface ButtonStyle {
   text: string;
 }
 
-function getStylesByVariant(palette: any): Record<Variant, ButtonStyle> {
+function getStylesByVariant(
+  palette: any,
+  isDark: boolean,
+): Record<Variant, ButtonStyle> {
   return {
     primary: {
       background: `rgba(73, 183, 255, ${opacity.muted})`,
@@ -28,8 +31,12 @@ function getStylesByVariant(palette: any): Record<Variant, ButtonStyle> {
       text: palette.textPrimary,
     },
     neutral: {
-      background: `rgba(255, 255, 255, ${opacity.subtle})`,
-      border: `rgba(255, 255, 255, ${opacity.subtle})`,
+      background: isDark
+        ? `rgba(255, 255, 255, ${opacity.subtle})`
+        : 'rgba(0, 0, 0, 0.04)',
+      border: isDark
+        ? `rgba(255, 255, 255, ${opacity.subtle})`
+        : 'rgba(0, 0, 0, 0.10)',
       text: palette.textPrimary,
     },
     danger: {
@@ -47,8 +54,8 @@ export function ActionButton({
   style,
   disabled = false,
 }: ActionButtonProps) {
-  const { palette } = useTheme();
-  const stylesByVariant = getStylesByVariant(palette);
+  const { palette, mode } = useTheme();
+  const stylesByVariant = getStylesByVariant(palette, mode === 'dark');
   const theme = stylesByVariant[variant];
 
   return (

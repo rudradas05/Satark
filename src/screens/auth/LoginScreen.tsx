@@ -14,24 +14,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBackground } from '../../components/AppBackground';
 import { ActionButton } from '../../components/ActionButton';
 import { useAuth } from '../../state/AuthState';
+import { useTheme } from '../../state/ThemeState';
+import { useToast } from '../../state/ToastState';
 import {
   opacity,
-  palette,
   radii,
   shadow,
   spacing,
+  themedBorder,
   typography,
 } from '../../theme/tokens';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
+  const { showToast } = useToast();
+  const { palette, mode } = useTheme();
+  const isDark = mode === 'dark';
+  const border = themedBorder(isDark);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const identifierTrimmed = identifier.trim();
@@ -50,22 +56,26 @@ export function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     if (!canContinue || isSubmitting) return;
 
-    setErrorMessage('');
     setIsSubmitting(true);
 
     try {
       await login({ identifier: identifierTrimmed, password: password.trim() });
+      showToast({ type: 'success', message: 'Logged in successfully.' });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unable to login right now';
-      setErrorMessage(message);
+      showToast({
+        type: 'error',
+        message: getUserFriendlyErrorMessage(
+          error,
+          'Unable to log in. Please try again.',
+        ),
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: palette.background }]}>
       <AppBackground minimal />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
@@ -76,32 +86,71 @@ export function LoginScreen({ navigation }: any) {
             <Pressable
               onPress={() => navigation.goBack()}
               hitSlop={8}
-              style={styles.backButton}
+              style={[
+                styles.backButton,
+                {
+                  borderColor: border,
+                  backgroundColor: isDark
+                    ? `rgba(255,255,255,${opacity.subtle})`
+                    : `rgba(0,0,0,0.04)`,
+                },
+              ]}
             >
-              <ArrowLeft size={22} strokeWidth={2.4} color={palette.textPrimary} />
+              <ArrowLeft
+                size={22}
+                strokeWidth={2.4}
+                color={palette.textPrimary}
+              />
             </Pressable>
           </View>
 
           <View style={styles.content}>
             {/* Welcome Section */}
             <View style={styles.welcomeSection}>
-              <View style={styles.smallLogo}>
-                <Text style={styles.smallLogoText}>S</Text>
+              <View
+                style={[
+                  styles.smallLogo,
+                  {
+                    backgroundColor: isDark
+                      ? `rgba(73, 183, 255, ${opacity.muted})`
+                      : `rgba(26, 127, 232, 0.12)`,
+                    borderColor: palette.accent,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.smallLogoText, { color: palette.textPrimary }]}
+                >
+                  S
+                </Text>
               </View>
-              <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: palette.textPrimary }]}>
+                Welcome Back
+              </Text>
+              <Text style={[styles.subtitle, { color: palette.textSecondary }]}>
                 Access your Satark console to manage your security
               </Text>
             </View>
 
             {/* Form Card */}
-            <View style={styles.card}>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: palette.surface, borderColor: border },
+              ]}
+            >
               {/* Email or Phone Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email or Phone</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Email or Phone
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'identifier' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -114,7 +163,7 @@ export function LoginScreen({ navigation }: any) {
                     keyboardType="default"
                     placeholder="name@example.com or 9876543210"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                 </View>
@@ -122,10 +171,16 @@ export function LoginScreen({ navigation }: any) {
 
               {/* Password Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={[styles.label, { color: palette.textSecondary }]}>
+                  Password
+                </Text>
                 <View
                   style={[
                     styles.inputWrapper,
+                    {
+                      backgroundColor: palette.surfaceMuted,
+                      borderColor: border,
+                    },
                     focusedInput === 'password' && styles.inputWrapperFocused,
                   ]}
                 >
@@ -137,7 +192,7 @@ export function LoginScreen({ navigation }: any) {
                     secureTextEntry={!showPass}
                     placeholder="********"
                     placeholderTextColor={palette.textSecondary}
-                    style={styles.input}
+                    style={[styles.input, { color: palette.textPrimary }]}
                     editable={!isSubmitting}
                   />
                   <Pressable
@@ -158,7 +213,7 @@ export function LoginScreen({ navigation }: any) {
               <ActionButton
                 label="Login"
                 variant="primary"
-                disabled={!canContinue}
+                disabled={!canContinue || isSubmitting}
                 onPress={handleLogin}
                 style={[
                   styles.loginButton,
@@ -169,35 +224,55 @@ export function LoginScreen({ navigation }: any) {
               {isSubmitting ? (
                 <View style={styles.feedbackRow}>
                   <ActivityIndicator size="small" color={palette.textPrimary} />
-                  <Text style={styles.feedbackText}>Signing in...</Text>
+                  <Text
+                    style={[
+                      styles.feedbackText,
+                      { color: palette.textSecondary },
+                    ]}
+                  >
+                    Signing in...
+                  </Text>
                 </View>
-              ) : null}
-
-              {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
               ) : null}
 
               {/* Signup Link */}
               <View style={styles.signupPrompt}>
-                <Text style={styles.signupText}>Don't have an account? </Text>
+                <Text
+                  style={[styles.signupText, { color: palette.textSecondary }]}
+                >
+                  Don't have an account?{' '}
+                </Text>
                 <Pressable
                   onPress={() => navigation.navigate('Signup')}
                   disabled={isSubmitting}
                 >
-                  <Text style={styles.signupLink}>Create one</Text>
+                  <Text style={[styles.signupLink, { color: palette.accent }]}>
+                    Create one
+                  </Text>
                 </Pressable>
               </View>
             </View>
 
             {/* Security Note */}
-            <View style={styles.securityNote}>
+            <View
+              style={[
+                styles.securityNote,
+                {
+                  backgroundColor: isDark
+                    ? `rgba(73, 183, 255, ${opacity.muted})`
+                    : `rgba(26, 127, 232, 0.06)`,
+                },
+              ]}
+            >
               <Lock
                 size={20}
                 strokeWidth={2.3}
                 color={palette.textSecondary}
                 style={styles.securityIcon}
               />
-              <Text style={styles.securityText}>
+              <Text
+                style={[styles.securityText, { color: palette.textSecondary }]}
+              >
                 Your data is encrypted and stays on your device
               </Text>
             </View>
@@ -209,7 +284,7 @@ export function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: palette.background },
+  root: { flex: 1 },
   safeArea: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -227,8 +302,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
-    backgroundColor: `rgba(255,255,255,${opacity.subtle})`,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -249,22 +322,18 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: radii.lg,
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderWidth: 1.5,
-    borderColor: `rgba(73, 183, 255, 0.6)`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
     ...shadow.soft,
   },
   smallLogoText: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 28,
     fontWeight: '900',
   },
   title: {
-    color: palette.textPrimary,
     fontFamily: typography.headingFamily,
     fontSize: 28,
     fontWeight: '900',
@@ -272,7 +341,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
     lineHeight: 20,
@@ -281,10 +349,8 @@ const styles = StyleSheet.create({
 
   // Form Card
   card: {
-    backgroundColor: palette.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     ...shadow.card,
@@ -295,7 +361,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     fontWeight: '900',
@@ -306,10 +371,8 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surfaceMuted,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: `rgba(255,255,255,${opacity.subtle})`,
     paddingHorizontal: spacing.md,
   },
   inputWrapperFocused: {
@@ -319,7 +382,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 12,
-    color: palette.textPrimary,
     fontFamily: typography.bodyFamily,
     fontSize: 16,
   },
@@ -344,16 +406,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   feedbackText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
-  },
-  errorText: {
-    marginTop: spacing.sm,
-    color: palette.spam,
-    fontFamily: typography.bodyFamily,
-    fontSize: 12,
-    textAlign: 'center',
   },
 
   // Signup Prompt
@@ -364,12 +418,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   signupText: {
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
   },
   signupLink: {
-    color: `rgba(73, 183, 255, 0.9)`,
     fontFamily: typography.bodyFamily,
     fontSize: 14,
     fontWeight: '900',
@@ -379,7 +431,6 @@ const styles = StyleSheet.create({
   securityNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `rgba(73, 183, 255, ${opacity.muted})`,
     borderRadius: radii.lg,
     padding: spacing.md,
     gap: spacing.sm,
@@ -389,7 +440,6 @@ const styles = StyleSheet.create({
   },
   securityText: {
     flex: 1,
-    color: palette.textSecondary,
     fontFamily: typography.bodyFamily,
     fontSize: 12,
     lineHeight: 16,

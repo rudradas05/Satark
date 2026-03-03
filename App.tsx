@@ -1,40 +1,46 @@
 import { NavigationContainer, Theme } from '@react-navigation/native';
+import React, { useMemo } from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { darkPalette } from './src/theme/tokens';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { MessageStateProvider } from './src/state/MessageState';
+import { SmsGate } from './src/components/SmsGate';
 import { AuthProvider } from './src/state/AuthState';
-import { ThemeProvider, useTheme } from './src/state/ThemeState';
+import { MessageStateProvider } from './src/state/MessageState';
 
-const navTheme: Theme = {
-  dark: true,
-  colors: {
-    primary: darkPalette.accent,
-    background: darkPalette.background,
-    card: darkPalette.surface,
-    text: darkPalette.textPrimary,
-    border: darkPalette.border,
-    notification: darkPalette.spam,
-  },
-  fonts: {
-    regular: { fontFamily: 'System', fontWeight: '400' },
-    medium: { fontFamily: 'System', fontWeight: '500' },
-    bold: { fontFamily: 'System', fontWeight: '700' },
-    heavy: { fontFamily: 'System', fontWeight: '800' },
-  },
-};
+import { ThemeProvider, useTheme } from './src/state/ThemeState';
+import { ToastProvider } from './src/state/ToastState';
 
 function AppContent() {
-  const { palette } = useTheme();
+  const { mode, palette } = useTheme();
+  const isDark = mode === 'dark';
+  const navTheme = useMemo<Theme>(
+    () => ({
+      dark: isDark,
+      colors: {
+        primary: palette.accent,
+        background: palette.background,
+        card: palette.surface,
+        text: palette.textPrimary,
+        border: palette.border,
+        notification: palette.spam,
+      },
+      fonts: {
+        regular: { fontFamily: 'System', fontWeight: '400' },
+        medium: { fontFamily: 'System', fontWeight: '500' },
+        bold: { fontFamily: 'System', fontWeight: '700' },
+        heavy: { fontFamily: 'System', fontWeight: '800' },
+      },
+    }),
+    [isDark, palette],
+  );
 
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar
         backgroundColor={palette.background}
-        barStyle="light-content"
+        barStyle={isDark ? 'light-content' : 'dark-content'}
       />
       <AppNavigator />
     </NavigationContainer>
@@ -46,11 +52,14 @@ function App() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <MessageStateProvider>
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
-          </MessageStateProvider>
+          <ToastProvider>
+            <MessageStateProvider>
+              <AuthProvider>
+                <SmsGate />
+                <AppContent />
+              </AuthProvider>
+            </MessageStateProvider>
+          </ToastProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

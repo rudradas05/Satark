@@ -3,6 +3,8 @@
   "compilerOptions": {
     "types": ["jest","node"],
     "jsx": "react-jsx",
+    "lib": ["ES2020", "ES2020.String", "ES2020.BigInt", "ES2020.Promise", "ES2020.Symbol.WellKnown"],
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["**/*.ts", "**/*.tsx", "backend/prisma.config.js"],
   "exclude": ["**/node_modules", "**/Pods"]

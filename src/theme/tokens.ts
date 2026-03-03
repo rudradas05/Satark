@@ -29,19 +29,19 @@ export const darkPalette = {
   black: '#000000',
 };
 
-// LIGHT PALETTE (new)
+// LIGHT PALETTE
 export const lightPalette = {
-  background: '#FFFFFF',
-  backgroundElevated: '#F5F5F5',
-  surface: '#FAFAFA',
-  surfaceMuted: '#F0F0F0',
-  border: '#E0E0E0',
-  textPrimary: '#1A1A1A',
-  textSecondary: '#666666',
-  accent: '#0066CC',
-  safe: '#2ED8A1',
-  suspicious: '#F6B24E',
-  spam: '#FF6363',
+  background: '#F6F8FC',
+  backgroundElevated: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceMuted: '#EEF1F6',
+  border: '#D8DDE6',
+  textPrimary: '#111827',
+  textSecondary: '#5B6478',
+  accent: '#1A7FE8',
+  safe: '#0DA678',
+  suspicious: '#D4920A',
+  spam: '#DC3545',
   white: '#FFFFFF',
   black: '#000000',
 };
@@ -121,3 +121,13 @@ export const shadow = Platform.select({
 
 // Default to dark (can be changed)
 export const palette = darkPalette;
+
+/** Returns appropriate overlay rgba based on dark/light mode */
+export function overlayColor(isDark: boolean, alpha: number): string {
+  return isDark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha * 0.6})`;
+}
+
+/** Returns a themed border color */
+export function themedBorder(isDark: boolean): string {
+  return isDark ? `rgba(255,255,255,${opacity.subtle})` : `rgba(0,0,0,0.08)`;
+}
